@@ -1,0 +1,2 @@
+"0","MovieLenseEDAMeanRatingperMovie <- MovieLenseEDA %>% group_by(item) %>% summarise(mean_Rating = mean(rating))"
+"0","hist(MovieLenseEDAMeanRatingperMovie$mean_Rating)"

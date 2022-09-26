@@ -1,0 +1,2 @@
+"0","MovieLenseEDA <- as(MovieLense, ""data.frame"")"
+"0","MovieLenseEDA %>% group_by(item) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))"

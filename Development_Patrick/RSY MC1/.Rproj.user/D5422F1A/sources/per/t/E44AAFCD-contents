@@ -1,0 +1,288 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(recommenderlab)
+library(Matrix)
+```
+
+```{r}
+data(MovieLense)
+```
+
+```{r}
+head(as(MovieLense, "data.frame"))
+```
+```{r}
+getRatingMatrix(MovieLense)
+```
+
+
+
+```{r}
+MovieLenseEDA <- as(MovieLense, "data.frame")
+MovieLenseEDA %>% group_by(item) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+```
+```{r}
+hist(getRatings(MovieLense))
+```
+
+```{r}
+MovieLenseEDAMeanRatingperMovie <- MovieLenseEDA %>% group_by(item) %>% summarise(mean_Rating = mean(rating))
+hist(MovieLenseEDAMeanRatingperMovie$mean_Rating)
+```
+Wie stark streuen die Ratings von individuellen Kunden?
+```{r}
+hist(getRatings(MovieLense[1,]))
+```
+```{r}
+MovieLensenormalized <- normalize(MovieLense)
+hist(getRatings(MovieLensenormalized[1,]))
+```
+
+
+```{r}
+image(MovieLense)
+```
+```{r}
+smallListMovies <- MovieLenseEDA %>% group_by(item) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+smallListMovies <- smallListMovies %>% slice(0:700)
+smallListMovies
+```
+
+```{r}
+smallListUser <- MovieLenseEDA %>% group_by(user) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+smallListUser <- smallListUser %>% slice(0:400)
+smallListUser
+```
+
+
+```{r}
+smallMovieLenseEDA <- MovieLenseEDA %>% filter(user %in% c(smallListUser$user))
+smallMovieLenseEDA <- smallMovieLenseEDA %>% filter(item %in% c(smallListMovies$item))
+smallMovieLenseEDA
+```
+```{r}
+smallMovieLense <- as(smallMovieLenseEDA, "realRatingMatrix")
+getRatingMatrix(smallMovieLense)
+```
+Anzahl Filme und Kunden sowie Sparsity vor und nach Datenreduktion,
+```{r}
+MovieLense
+smallMovieLense
+```
+
+
+```{r}
+image(smallMovieLense)
+```
+mittlere Kundenratings pro Film vor und nach Datenreduktion.
+```{r}
+smallMovieLenseEDAMeanRatingperMovie <- smallMovieLenseEDA %>% group_by(item) %>% summarise(mean_Rating = mean(rating))
+hist(smallMovieLenseEDAMeanRatingperMovie$mean_Rating)
+hist(MovieLenseEDAMeanRatingperMovie$mean_Rating)
+```
+Zerlege den reduzierten MovieLense Datensatz in ein disjunktes Trainings
+und Testdatenset im Verhältnis 4:1
+
+```{r}
+#eval <- evaluationScheme(smallMovieLense, method="split", train=0.8, given=50, goodRating=5)
+#eval
+training <- smallMovieLense[1:320]
+training
+```
+
+```{r}
+ribcf <- Recommender(training, "IBCF", param=list(k= 30, method = "cosine"))
+ribcf
+rubcf <- Recommender(training, "UBCF", param=list(nn= 30, method = "cosine"))
+rubcf
+```
+```{r}
+names(getModel(ribcf))
+```
+
+```{r}
+image(getModel(ribcf)$sim)
+```
+Berechne Top 15 Empfehlungen für Testkunden mit IBCF und UBCF
+```{r}
+ribcftopNList = predict(ribcf, smallMovieLense[321:400], n=15)
+ribcftopNList
+rubcftopNList = predict(rubcf, smallMovieLense[321:400], n=15)
+rubcftopNList
+```
+
+```{r}
+ribcftopNList <- as(ribcftopNList, "list")
+ribcftopNList <- combine(ribcftopNList)
+ribcftopNList <- data.frame(ribcftopNList)
+ribcftopNList <- ribcftopNList %>% group_by(ribcftopNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+ribcftopNList
+rubcftopNList <- as(rubcftopNList, "list")
+rubcftopNList <- combine(rubcftopNList)
+rubcftopNList <- data.frame(rubcftopNList)
+rubcftopNList <- rubcftopNList %>% group_by(rubcftopNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+rubcftopNList
+#hist(rubcftopNList$Anzahl)
+```
+Vergleiche den Anteil übereinstimmender Empfehlungen der Top 15 Liste für
+IBCF vs UBCF, beide mit ordinalem Rating und Cosine Similarity für alle
+Testkunden,
+```{r}
+paste("Anzahl IBCF:", nrow(ribcftopNList))
+paste("Anzahl UBCF:", nrow(rubcftopNList))
+IntersectordRatCosine <- intersect(ribcftopNList$ribcftopNList, rubcftopNList$rubcftopNList)
+paste("Anzahl gemeinsame Empfehlungen:", length(IntersectordRatCosine))
+paste("Anteil IBCF:", length(IntersectordRatCosine) / nrow(ribcftopNList) * 100)
+paste("Anteil UBCF:", length(IntersectordRatCosine) / nrow(rubcftopNList) * 100)
+```
+
+Vergleiche den Anteil übereinstimmender Empfehlungen der Top 15 Liste für
+IBCF vs UBCF, beide mit binärem Rating und Jaccard Similarity für alle
+Testkunden,
+```{r}
+smallMovieLense_bin <- binarize(smallMovieLense, minRating = 4)
+training_bin <- smallMovieLense_bin[1:320]
+training_bin
+ribcf_bin <- Recommender(training_bin, "IBCF", param=list(k= 30, method = "jaccard"))
+ribcf_bin
+rubcf_bin <- Recommender(training_bin, "UBCF", param=list(nn= 30, method = "jaccard"))
+rubcf_bin
+```
+```{r}
+ribcftopNList_bin = predict(ribcf_bin, smallMovieLense_bin[321:400], n=15)
+ribcftopNList_bin
+rubcftopNList_bin = predict(rubcf_bin, smallMovieLense_bin[321:400], n=15)
+rubcftopNList_bin
+```
+```{r}
+ribcftopNList_bin <- as(ribcftopNList_bin, "list")
+ribcftopNList_bin <- combine(ribcftopNList_bin)
+ribcftopNList_bin <- data.frame(ribcftopNList_bin)
+ribcftopNList_bin <- ribcftopNList_bin %>% group_by(ribcftopNList_bin) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+ribcftopNList_bin
+rubcftopNList_bin <- as(rubcftopNList_bin, "list")
+rubcftopNList_bin <- combine(rubcftopNList_bin)
+rubcftopNList_bin <- data.frame(rubcftopNList_bin)
+rubcftopNList_bin <- rubcftopNList_bin %>% group_by(rubcftopNList_bin) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+rubcftopNList_bin
+```
+```{r}
+paste("Anzahl IBCF binär:", nrow(ribcftopNList_bin))
+paste("Anzahl UBCF binär:", nrow(rubcftopNList_bin))
+IntersectbinRatJaccard <- intersect(ribcftopNList_bin$ribcftopNList_bin, rubcftopNList_bin$rubcftopNList_bin)
+paste("Anzahl gemeinsame Empfehlungen binär:", length(IntersectbinRatJaccard))
+paste("Anteil IBCF binär:", length(IntersectbinRatJaccard) / nrow(ribcftopNList_bin) * 100)
+paste("Anteil UBCF binär:", length(IntersectbinRatJaccard) / nrow(rubcftopNList_bin) * 100)
+```
+
+Vergleiche den Anteil übereinstimmender Empfehlungen der Top 15 Liste für
+UBCF mit ordinalem (Cosine Similarity) vs binärem Rating (Jaccard Similarity)
+für alle Testkunden.
+```{r}
+paste("Anzahl UBCF:", nrow(rubcftopNList))
+paste("Anzahl UBCF binär:", nrow(rubcftopNList_bin))
+Intersectmixed <- intersect(rubcftopNList$rubcftopNList, rubcftopNList_bin$rubcftopNList_bin)
+paste("Anzahl gemeinsame Empfehlungen gemischt:", length(Intersectmixed))
+paste("Anzahl UBCF:", length(Intersectmixed) / nrow(rubcftopNList) * 100)
+paste("Anteil UBCF binär:", length(Intersectmixed) / nrow(rubcftopNList_bin) * 100)
+```
+Vergleiche wie sich der Anteil übereinstimmender Empfehlungen der Top 15
+Liste für IBCF vs verschiedene SVD Modelle verändert, wenn die Anzahl der
+Singulärwerte für SVD von 10 auf 20, 30, 40, 50 verändert wird.
+```{r}
+rsvd10 <- Recommender(training, "SVD", param=list(k= 10))
+rsvd10topNList = predict(rsvd10, smallMovieLense_bin[321:400], n=15)
+rsvd20 <- Recommender(training, "SVD", param=list(k= 20))
+rsvd20topNList = predict(rsvd20, smallMovieLense_bin[321:400], n=15)
+rsvd30 <- Recommender(training, "SVD", param=list(k= 30))
+rsvd30topNList = predict(rsvd30, smallMovieLense_bin[321:400], n=15)
+rsvd40 <- Recommender(training, "SVD", param=list(k= 40))
+rsvd40topNList = predict(rsvd40, smallMovieLense_bin[321:400], n=15)
+rsvd50 <- Recommender(training, "SVD", param=list(k= 50))
+rsvd50topNList = predict(rsvd50, smallMovieLense_bin[321:400], n=15)
+```
+
+```{r}
+rsvd10topNList <- as(rsvd10topNList, "list")
+rsvd10topNList <- combine(rsvd10topNList)
+rsvd10topNList <- data.frame(rsvd10topNList)
+rsvd10topNList <- rsvd10topNList %>% group_by(rsvd10topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+rsvd10topNList
+rsvd20topNList <- as(rsvd20topNList, "list")
+rsvd20topNList <- combine(rsvd20topNList)
+rsvd20topNList <- data.frame(rsvd20topNList)
+rsvd20topNList <- rsvd20topNList %>% group_by(rsvd20topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+rsvd30topNList <- as(rsvd30topNList, "list")
+rsvd30topNList <- combine(rsvd30topNList)
+rsvd30topNList <- data.frame(rsvd30topNList)
+rsvd30topNList <- rsvd30topNList %>% group_by(rsvd30topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+rsvd40topNList <- as(rsvd40topNList, "list")
+rsvd40topNList <- combine(rsvd40topNList)
+rsvd40topNList <- data.frame(rsvd40topNList)
+rsvd40topNList <- rsvd40topNList %>% group_by(rsvd40topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+rsvd50topNList <- as(rsvd50topNList, "list")
+rsvd50topNList <- combine(rsvd50topNList)
+rsvd50topNList <- data.frame(rsvd50topNList)
+rsvd50topNList <- rsvd50topNList %>% group_by(rsvd50topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+```
+
+
+```{r}
+IntersectIBCFSVD10 <- intersect(ribcftopNList$ribcftopNList, rsvd10topNList$rsvd10topNList)
+paste("Anzahl gemeinsame Empfehlungen SVD10:", length(IntersectIBCFSVD10))
+paste("Anteil SVD10:", length(IntersectIBCFSVD10) / nrow(rsvd10topNList) * 100)
+
+IntersectIBCFSVD20 <- intersect(ribcftopNList$ribcftopNList, rsvd20topNList$rsvd20topNList)
+paste("Anzahl gemeinsame Empfehlungen SVD20:", length(IntersectIBCFSVD20))
+paste("Anteil SVD20:", length(IntersectIBCFSVD20) / nrow(rsvd20topNList) * 100)
+
+IntersectIBCFSVD30 <- intersect(ribcftopNList$ribcftopNList, rsvd30topNList$rsvd30topNList)
+paste("Anzahl gemeinsame Empfehlungen SVD30:", length(IntersectIBCFSVD30))
+paste("Anteil SVD30:", length(IntersectIBCFSVD30) / nrow(rsvd30topNList) * 100)
+
+IntersectIBCFSVD40 <- intersect(ribcftopNList$ribcftopNList, rsvd40topNList$rsvd40topNList)
+paste("Anzahl gemeinsame Empfehlungen SVD40:", length(IntersectIBCFSVD40))
+paste("Anteil SVD40:", length(IntersectIBCFSVD40) / nrow(rsvd40topNList) * 100)
+
+IntersectIBCFSVD50 <- intersect(ribcftopNList$ribcftopNList, rsvd50topNList$rsvd50topNList)
+paste("Anzahl gemeinsame Empfehlungen SVD50:", length(IntersectIBCFSVD50))
+paste("Anteil SVD50:", length(IntersectIBCFSVD50) / nrow(rsvd50topNList) * 100)
+```
+Bestimme aus 5 unterschiedlichen Modellen das hinsichtlich
+Top N Empfehlungen beste Modell. Begründe deine Modellwahlen
+aufgrund der bisher gemachten Erkenntnisse und verwende als 6.
+Modell einen Top Movie Recommender (Basis: reduzierter Datensatz).
+```{r}
+set.seed(1234)
+scheme <- evaluationScheme(smallMovieLense, method="cross", k = 10, given=-5, goodRating=5)
+scheme
+```
+
+```{r}
+algorithms <- list("hybrid" = list(name = "HYBRID", param =list(recommenders = list(SVD = list(name="SVD", param=list(k = 40)),
+                                                                                    POPULAR = list(name = "POPULAR", param = NULL)
+                                                                                    ))),
+                   "libmf" = list(name="LIBMF", param=list(dim=10)),
+                   "popular items" = list(name="POPULAR", param=NULL),
+                   "user-based CF" = list(name="UBCF", param=list(nn=50)),
+                   "item-based CF" = list(name="IBCF", param=list(k=50)),
+                   "SVD40" = list(name="SVD", param=list(k = 40)))
+results <- evaluate(scheme, algorithms, type = "topNList", n=c(10, 15, 20, 25, 30))
+```
+```{r}
+plot(results, annotate=c(1,3), legend="topleft")
+```
+```{r}
+algorithmsimprovedrecom <- list("popular items center" = list(name="POPULAR", param=NULL),
+                   "popular items Z-score" = list(name="POPULAR", param=list(normalize="Z-score")))
+resultsimprovedrecom <- evaluate(scheme, algorithmsimprovedrecom, type = "topNList", n=c(10, 15, 20, 25, 30))
+```
+```{r}
+plot(resultsimprovedrecom, annotate=c(1,3), legend="topleft")
+```
+

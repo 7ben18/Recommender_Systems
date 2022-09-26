@@ -1,0 +1,3 @@
+"0","smallMovieLenseEDA <- MovieLenseEDA %>% filter(user %in% c(smallListUser$user))"
+"0","smallMovieLenseEDA <- smallMovieLenseEDA %>% filter(item %in% c(smallListMovies$item))"
+"0","smallMovieLenseEDA"

@@ -1,0 +1,26 @@
+"0","set.seed(1234)"
+"0","scheme <- evaluationScheme(smallMovieLense, method=""cross"", k = 10, given=-5, goodRating=5)"
+"0","scheme"
+"1","Evaluation scheme using all-but-5 items
+"
+"1","Method: ‘cross-validation’ with 10 run(s).
+"
+"1","Good ratings: >=5.000000
+"
+"1","Data set: "
+"1","400"
+"1"," "
+"1","x"
+"1"," "
+"1","700"
+"1"," "
+"1","rating matrix of class"
+"1"," "
+"1","‘realRatingMatrix’"
+"1"," "
+"1","with"
+"1"," "
+"1","67427"
+"1"," "
+"1","ratings.
+"

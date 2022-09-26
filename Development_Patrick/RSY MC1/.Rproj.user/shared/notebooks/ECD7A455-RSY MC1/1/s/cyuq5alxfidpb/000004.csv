@@ -1,0 +1,5 @@
+"0","rubcftopNList_bin <- as(rubcftopNList_bin, ""list"")"
+"0","rubcftopNList_bin <- combine(rubcftopNList_bin)"
+"0","rubcftopNList_bin <- data.frame(rubcftopNList_bin)"
+"0","rubcftopNList_bin <- rubcftopNList_bin %>% group_by(rubcftopNList_bin) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))"
+"0","rubcftopNList_bin"

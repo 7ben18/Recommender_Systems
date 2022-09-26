@@ -1,0 +1,135 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r}
+library("recommenderlab")
+library("Matrix")
+library("tidyverse")
+```
+
+
+```{r}
+data(MovieLense)
+```
+
+```{r}
+MovieLense
+```
+
+
+```{r}
+MovieLense_EDA <- as(MovieLense, "data.frame")
+```
+
+```{r}
+names(MovieLenseMeta)[names(MovieLenseMeta) == 'title'] <- 'item'
+```
+
+
+```{r}
+MovieLense_EDA <- full_join(MovieLense_EDA, MovieLenseMeta)
+```
+
+```{r}
+head(MovieLense_EDA)
+```
+
+```{r}
+summary(MovieLense_EDA)
+```
+
+```{r}
+MovieLense_EDA <- MovieLense_EDA %>% mutate(user = as.factor(user))
+```
+
+```{r}
+summary(MovieLense_EDA)
+```
+Folgend die am häufigsten geschauten Filme
+```{r}
+No_Comments <- MovieLense_EDA %>% group_by(item) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+head(No_Comments, 5)
+```
+Die Verteilung der Kundenratings gesamthaft
+```{r}
+hist(MovieLense_EDA$rating)
+```
+Die Verteilung der Kundenratings des Genres Comedy
+```{r}
+Ratings_Comedy <- filter(MovieLense_EDA, Comedy > 0)
+hist(Ratings_Comedy$rating)
+```
+Die Verteilung der mittleren Kundenratings pro Film
+```{r}
+MeanRatingsperMovie <- MovieLense_EDA %>% group_by(item) %>% summarise("MeanRating" = mean(rating))
+hist(MeanRatingsperMovie$MeanRating)
+```
+Die Streuung der Ratings des ersten Kunden
+```{r}
+RatingsFirstUser <- filter(MovieLense_EDA, user == 1)
+hist(RatingsFirstUser$rating)
+```
+```{r}
+MovieLense_EDAnormalized <- MovieLense_EDA %>% select(user, item, rating) %>% pivot_wider(names_from = item, values_from = rating)
+MovieLense_EDAnormalized <- as(as.matrix(MovieLense_EDAnormalized), "realRatingMatrix")
+MovieLense_EDAnormalized <- normalize(MovieLense_EDAnormalized)
+head(getRatingMatrix(MovieLense_EDAnormalized))
+```
+```{r}
+NormalizedRatingsFirstUser <- MovieLense_EDAnormalized[1,]
+hist(getRatings(NormalizedRatingsFirstUser))
+hist(RatingsFirstUser$rating)
+```
+```{r}
+#Einfügen: Welche strukturelle Charakteristika (z.B. Sparsity) und Auffälligkeiten...
+```
+
+Reduktion der Datensätze
+```{r}
+smallListMovies <- MovieLense_EDA %>% group_by(item) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+smallListMovies
+```
+
+```{r}
+smallListMovies <- smallListMovies %>% slice(0:700)
+smallListMovies
+```
+```{r}
+smallListUser <- MovieLense_EDA %>% group_by(user) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+smallListUser
+```
+
+```{r}
+smallListUser <- smallListUser %>% slice(0:400)
+smallListUser
+```
+```{r}
+smallMovieLense_EDA <- MovieLense_EDA %>% filter(user %in% c(smallListUser$user))
+smallMovieLense_EDA
+```
+```{r}
+smallMovieLense_EDA <- smallMovieLense_EDA %>% filter(item %in% c(smallListMovies$item))
+smallMovieLense_EDA
+```
+Anzahl Kunden und Filme vor Reduktion
+```{r}
+length(unique(MovieLense_EDA$user))
+length(unique(MovieLense_EDA$item))
+```
+Anzahl Kunden und Filme nach Reduktin
+```{r}
+length(unique(smallMovieLense_EDA$user))
+length(unique(smallMovieLense_EDA$item))
+```
+Vergleich der Verteilung der mittleren Kundenratings pro Film vor und nach Reduktion
+```{r}
+smallMeanRatingsperMovie <- smallMovieLense_EDA %>% group_by(item) %>% summarise("MeanRating" = mean(rating))
+hist(smallMeanRatingsperMovie$MeanRating)
+hist(MeanRatingsperMovie$MeanRating)
+```
+

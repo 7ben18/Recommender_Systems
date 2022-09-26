@@ -1,0 +1,5 @@
+"0","rsvd10topNList <- as(rsvd10topNList, ""list"")"
+"0","rsvd10topNList <- combine(rsvd10topNList)"
+"0","rsvd10topNList <- data.frame(rsvd10topNList)"
+"0","rsvd10topNList <- rsvd10topNList %>% group_by(rsvd10topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))"
+"0","rsvd10topNList"

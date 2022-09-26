@@ -1,0 +1,3 @@
+"0","smallListUser <- MovieLenseEDA %>% group_by(user) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))"
+"0","smallListUser <- smallListUser %>% slice(0:400)"
+"0","smallListUser"

@@ -1,0 +1,2 @@
+"0","MovieLensenormalized <- normalize(MovieLense)"
+"0","hist(getRatings(MovieLensenormalized[1,]))"

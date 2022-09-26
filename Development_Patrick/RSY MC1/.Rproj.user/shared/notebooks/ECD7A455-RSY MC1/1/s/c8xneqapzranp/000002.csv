@@ -1,0 +1,11 @@
+"0","ribcftopNList <- as(ribcftopNList, ""list"")"
+"0","ribcftopNList <- combine(ribcftopNList)"
+"2","Warning:"
+"2"," `combine()` was deprecated in dplyr 1.0.0.
+Please use `vctrs::vec_c()` instead.
+[90mThis warning is displayed once every 8 hours.[39m
+[90mCall `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.[39m
+"
+"0","ribcftopNList <- data.frame(ribcftopNList)"
+"0","ribcftopNList <- ribcftopNList %>% group_by(ribcftopNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))"
+"0","ribcftopNList"
