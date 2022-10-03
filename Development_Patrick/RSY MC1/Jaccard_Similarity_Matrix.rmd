@@ -1,0 +1,68 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+https://stats.stackexchange.com/a/89947
+
+
+```{r}
+#df <- rbind(c(1, 0, 1, 0), c(1, 0, 1, 1), c(0, 0, 1, 1))
+df <- rbind(c(0,1,0,0,0,1,0,0,1), c(0,0,1,0,0,0,0,0,1), c(1,1,0,0,0,1,0,0,0))
+df
+```
+
+
+```{r}
+df_crossprod <- tcrossprod(df)
+df_crossprod
+```
+
+```{r}
+im <- which(df_crossprod > 0, arr.ind=TRUE)
+im
+```
+
+```{r}
+b = rowSums(df)
+b
+```
+
+```{r}
+Aim = df_crossprod[im]
+Aim
+```
+
+```{r}
+J = sparseMatrix(
+          i = im[,1],
+          j = im[,2],
+          x = Aim / (b[im[,1]] + b[im[,2]] - Aim),
+          dims = dim(df_crossprod)
+    )
+J
+```
+
+```{r}
+library(recommenderlab)
+```
+
+```{r}
+df_RatingMat <- as(df, "realRatingMatrix")
+df
+```
+
+```{r}
+rec_simMat <- similarity(df_RatingMat, y = NULL, method = "jaccard", args = NULL)
+rec_simMat
+J
+```
+
+```{r}
+library(vegan)
+```
+
+```{r}
+1 - vegdist(df, method = "jaccard", binary=TRUE)
+```
+
