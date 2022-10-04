@@ -1,0 +1,127 @@
+---
+title: "RSY-MC1"
+author: "Patrick, Ben"
+output: 
+  html_notebook:
+    toc: True
+    toc_float: True
+---
+# Mini-Challenge Beschreibung
+
+
+# Daten und Libraries
+```{r}
+library(tidyverse)
+library(recommenderlab)
+```
+## Daten einlesen
+```{r}
+data(MovieLense)
+```
+
+## Library Methoden zum Datensatz MovieLense
+```{r}
+methods(class = class(MovieLense))
+```
+
+## Kopfzeilen vom Datensatz ausgeben
+```{r}
+head(as(MovieLense, "data.frame"))
+```
+
+## Fusszeilen vom Datensatz ausgeben
+```{r}
+tail(as(MovieLense, "data.frame"))
+```
+
+## Info zum Datensatz
+```{r}
+summary(as(MovieLense, "data.frame"))
+```
+## Datenframe Variabel erstellen
+```{r}
+MovieLenseEDA <- as(MovieLense, "data.frame")
+```
+
+
+# Explorative Datenanalyse
+Aufgabe 1: Untersuche den vollständigen MovieLense Datensatz 
+(d.h. vor Datenreduktion!) und beantworte folgende Fragen
+
+## 1. Welches sind die am häufigsten geschauten Genres/Filme?
+
+### Filme
+```{r}
+MovieLenseEDA %>% 
+  group_by(item) %>% 
+  summarise(Anzahl = n()) %>%
+  arrange(desc(Anzahl)) 
+```
+
+### Genre
+```{r}
+# Full Join mit df_movies_rating und MovieLenseMeta
+MovieLenseEDA_Joined <- full_join(MovieLenseEDA, MovieLenseMeta, 
+          by = c("item" = "title")) %>% 
+  select(-c("user", "item", "rating", "year", "url")) 
+
+# Aufsummieren der Genre Spalten
+(colSums(MovieLenseEDA_Joined)) %>% sort(decreasing = TRUE)
+
+### 
+# Muessen wir Genre Unknown entfernen?
+```
+
+## 2. Wie verteilen sich die Kundenratings gesamthaft und nach Genres?
+```{r}
+MovieLenseEDA_Joined <- full_join(MovieLenseEDA, MovieLenseMeta, 
+          by = c("item" = "title"))
+MovieLenseEDA_Joined
+```
+
+### Verteilung der Kundenratings Gesamthaft
+```{r}
+MovieLenseEDA_Joined$rating <- as.factor(MovieLenseEDA_Joined$rating)
+
+MovieLenseEDA_Joined %>% group_by(rating) %>%
+  summarize(Anzahl = n()) %>% 
+  ggplot(aes(x = rating, y = Anzahl)) + 
+  geom_bar(stat = "identity", 
+           fill = "lightblue", 
+           color = "black") + 
+  labs(x = "Ratings", 
+       y = "Anzahl", 
+       title = "Kundenratings Gesamthaft",
+       subtitle = "MovieLenseData")
+```
+
+### Verteilung der Kundenratings nach Genre
+```{r}
+# DataFrame reshapen 
+
+```
+
+
+
+
+## 3. Wie verteilen sich die mittleren Kundenratings pro Film?
+```{r}
+
+```
+
+## 4. Wie stark streuen die Ratings von individuellen Kunden?
+```{r}
+
+```
+
+## 5. Welchen Einfluss hat die Normierung der Ratings pro Kunde auf deren Verteilung?
+```{r}
+
+```
+
+## 6. Welche strukturellen Charakteristika (z.B. Sparsity) und Auffälligkeiten zeigt die User-Item Matrix?
+```{r}
+
+
+```
+
