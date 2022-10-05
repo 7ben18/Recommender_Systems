@@ -74,9 +74,9 @@ MovieLenseEDA_Joined <- full_join(MovieLenseEDA, MovieLenseMeta,
 
 ## 2. Wie verteilen sich die Kundenratings gesamthaft und nach Genres?
 ```{r}
+# DataFrame join
 MovieLenseEDA_Joined <- full_join(MovieLenseEDA, MovieLenseMeta, 
           by = c("item" = "title"))
-MovieLenseEDA_Joined
 ```
 
 ### Verteilung der Kundenratings Gesamthaft
@@ -116,25 +116,87 @@ MovieLenseEDA_Joined %>%
   
 ```
 
+```{r}
+
+
+MovieLenseHistoGenreRating <- MovieLenseEDA_Joined %>% 
+  select(-c("item", "user", "year", "url")) %>% 
+  pivot_longer(cols=c("unknown", "Action", "Adventure", "Animation", "Children's",
+                      "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
+                      "Film-Noir", "Horror", "Musical", "Mystery", "Horror",
+                      "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller",
+                      "War", "Western"),
+               names_to = "Genre", values_to = "X") %>%
+  group_by(Genre, rating) %>%
+  summarize(Anzahl = n()) 
+  
+MovieLenseHistoGenreRating$rating <- as.factor(MovieLenseHistoGenreRating$rating)
+
+MovieLenseHistoGenreRating 
+# ToDO Vis fehlt
+```
+
 
 ## 3. Wie verteilen sich die mittleren Kundenratings pro Film?
 ```{r}
-
+MovieLenseEDA %>% 
+  group_by(item) %>% 
+  summarize(mean_rating_per_film = mean(rating)) %>% 
+  ggplot(aes(x = mean_rating_per_film)) + 
+  geom_histogram(color = "black", fill = "lightblue", binwidth = 0.5) +
+    labs(x = "Ratings", 
+       y = "Anzahl", 
+       title = "Mittlere Kundenratings verteilung",
+       subtitle = "MovieLenseData")
+  
 ```
 
 ## 4. Wie stark streuen die Ratings von individuellen Kunden?
 ```{r}
+MovieLenseEDA %>% filter(user == c(1:9)) %>% 
+  ggplot(aes(x = user, y = rating)) +
+  geom_violin(color = "black", fill = "lightblue") 
 
+# Beschriftung und Farbe
 ```
 
 ## 5. Welchen Einfluss hat die Normierung der Ratings pro Kunde auf deren Verteilung?
 ```{r}
+MovieLensenormalized <- normalize(MovieLense)
+MovieLenseEDA_Normalized <- (as(MovieLensenormalized, "data.frame"))
+
+MovieLenseEDA_Normalized %>% filter(user == c(1:9)) %>% 
+  ggplot(aes(x = user, y = rating)) +
+  geom_violin(color = "black", fill = "lightblue") 
+
+# Labelings & Interpreation
 
 ```
 
 ## 6. Welche strukturellen Charakteristika (z.B. Sparsity) und Auffälligkeiten zeigt die User-Item Matrix?
 ```{r}
+image(MovieLense) 
 
-
+# Labeling + Interpreation + Antwort fehlt. 
+# Aufsteigend nach Anzahl bewertete Filmen
+# Film Besonders die ersten 400 Filme wurden am meisten bewrtet.
+# User kein Muster erkennbar
 ```
+
+```{r}
+# nratings => Gibt mir die Anzahl Bewerteten Filme in der Matrix
+# dim(MovieLense) gibt mir die Dimension (Zeilen, Spalten)
+
+nratings(MovieLense) / (dim(MovieLense)[1] * dim(MovieLense)[2]) * 100
+```
+
+
+
+
+
+
+
+
+
+
 
