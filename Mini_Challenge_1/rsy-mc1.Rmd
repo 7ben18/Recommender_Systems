@@ -148,7 +148,7 @@ MovieLenseEDA %>%
        y = "Anzahl", 
        title = "Mittlere Kundenratings verteilung",
        subtitle = "MovieLenseData")
-  
+
 ```
 
 ## 4. Wie stark streuen die Ratings von individuellen Kunden?
@@ -190,11 +190,140 @@ image(MovieLense)
 nratings(MovieLense) / (dim(MovieLense)[1] * dim(MovieLense)[2]) * 100
 ```
 
+# Datenreduktion
+## Aufgabe 2: Reduziere den MovieLense Datensatz auf rund 400 Kunden und 700 Filme, indem du Filme und Kunden mit sehr wenigen Ratings entfernst.
+
+### DataFrame neu einlesen
+```{r}
+MovieLenseToCut <- as(MovieLense, "data.frame")
+```
+
+### Auswahl der 400 Kunden
+```{r}
+MovieLense400User <- MovieLenseToCut %>% 
+  group_by(user) %>% 
+  summarize(Anzahl = n()) %>% 
+  arrange(desc(Anzahl)) %>% 
+  slice(0:400)
+head(MovieLense400User)
+```
+
+### Auswahl der 700 Movies
+```{r}
+MovieLense700Items <- MovieLenseToCut %>% 
+  group_by(item) %>% 
+  summarise(Anzahl = n()) %>% 
+  arrange(desc(Anzahl)) %>% 
+  slice(0:700)
+head(MovieLense700Items)
+```
+
+### DataFrame schneiden
+```{r}
+MovieLenseCut <- MovieLenseToCut %>% 
+  filter(user %in% c(MovieLense400User$user))
+
+MovieLenseCut <- MovieLenseCut %>% 
+  filter(item %in% c(MovieLense700Items$item))
+```
+
+Untersuche und dokumentiere die Eigenschaften des reduzierten Datensatzes und beschreibe den Effekt der Datenreduktion, d.h.
+
+## 1. Anzahl Filme und Kunden sowie Sparsity vor und nach Datenreduktion,
+
+### Vor der Datenreduktion
+```{r}
+image(MovieLense)
+```
+
+```{r}
+nratings(MovieLense) / (dim(MovieLense)[1] * dim(MovieLense)[2]) * 100
+
+```
 
 
+### Nach Datenreduktion
+```{r}
+MovieLenseCompact <- as(MovieLenseCut, "realRatingMatrix")
+image(MovieLenseCompact)
+```
+
+### Vergleich der Sparsity
+```{r}
+nratings(MovieLenseCompact) / (dim(MovieLenseCompact)[1] * dim(MovieLenseCompact)[2]) * 100
+
+# Interpreation
+```
+
+##2. Mittlere Kundenratings pro Film vor und nach Datenreduktion,
+
+```{r}
+MovieLenseCut %>% 
+  group_by(item) %>% 
+  summarize(mean_rating_per_film = mean(rating)) %>% 
+  ggplot(aes(x = mean_rating_per_film)) + 
+  geom_histogram(color = "black", fill = "lightblue", binwidth = 0.5) +
+    labs(x = "Ratings", 
+       y = "Anzahl", 
+       title = "Mittlere Kundenratings verteilung",
+       subtitle = "MovieLenseData")
+  
+# Willst du eine Verteilung fuer jeden Film oder reicht dir eine Tabelle?
+
+```
+
+## 3. Für Gruppen: Quantifiziere “Intersection over Union” der Ratings der unterschiedlich reduzierten Datensätze.
+
+```{r}
+# Fragezeichen? 
+
+```
+
+# Analyse Ähnlichkeitsmatrix
+
+## Aufgabe 3: Erzeuge einen IBCF Recommender und analysiere die Ähnlichkeitsmatrix des trainierten Modelles für den reduzierten Datensatz.
+
+## 1. Zerlege den reduzierten MovieLense Datensatz in ein disjunktes Trainings-und Testdatenset im Verhältnis 4:1,
+
+```{r}
+MovieLenseCut
+
+set.seed(1234)
+training <- MovieLenseCut %>% sample_frac(0.8)
+training
+
+test <- anti_join(MovieLenseCut, training, by = c("user", "item", "rating"))
+test
+
+training <- as(training, "realRatingMatrix")  
+test <- as(test, "realRatingMatrix")
+
+```
+
+## 2. Trainiere ein IBCF Modell mit 30 Nachbarn und Cosine Similarity,
+
+```{r}
+ribcf <- Recommender(training, "IBCF", param=list(k= 30, method = "cosine"))
+ribcf
+```
+
+## 3. Bestimme die Verteilung der Filme, welche bei IBCF für paarweise Ähnlichkeitsvergleiche verwendet werden,
+
+```{r}
+names(getModel(ribcf))
+```
+
+```{r}
+getModel(ribcf)$topN
+```
 
 
+##4. Bestimme die Filme, die am häufigsten in der Cosine-Ähnlichkeitsmatrix auftauchen und analysiere deren Vorkommen und Ratings im reduzierten Datensatz.
 
+```{r}
+ribcftopNList = predict(ribcf, test, n=10)
+ribcftopNList
+```
 
 
 
