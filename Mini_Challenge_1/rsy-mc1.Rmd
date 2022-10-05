@@ -97,11 +97,24 @@ MovieLenseEDA_Joined %>% group_by(rating) %>%
 
 ### Verteilung der Kundenratings nach Genre
 ```{r}
-# DataFrame reshapen 
+# DataFrame reshape 
+MovieLenseEDA_Joined$rating <- as.integer(MovieLenseEDA_Joined$rating)
 
+MovieLenseEDA_Joined %>% 
+  select(-c("item", "user", "year", "url")) %>% 
+  pivot_longer(cols=c("unknown", "Action", "Adventure", "Animation", "Children's",
+                      "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
+                      "Film-Noir", "Horror", "Musical", "Mystery", "Horror",
+                      "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller",
+                      "War", "Western"),
+               names_to = "Genre", values_to = "X") %>% 
+  ggplot(aes(x = rating)) +
+  geom_bar(fill = "lightblue", color = "black") + 
+  facet_wrap(~Genre)
+
+# Alle Plots sehen identisch aus? 
+  
 ```
-
-
 
 
 ## 3. Wie verteilen sich die mittleren Kundenratings pro Film?
