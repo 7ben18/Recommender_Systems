@@ -318,11 +318,11 @@ getModel(ribcf)$topN
 ##4. Bestimme die Filme, die am häufigsten in der Cosine-Ähnlichkeitsmatrix auftauchen und analysiere deren Vorkommen und Ratings im reduzierten Datensatz.
 
 ```{r}
-"ribcftopNList <- as(ribcftopNList, "list")
-ribcftopNList <- combine(ribcftopNList)
-ribcftopNList <- data.frame(ribcftopNList)
-ribcftopNList <- ribcftopNList %>% group_by(ribcftopNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
-ribcftopNList"""
+#ribcftopNList <- as(ribcftopNList, "list")
+#ribcftopNList <- combine(ribcftopNList)
+#ribcftopNList <- data.frame(ribcftopNList)
+#ribcftopNList <- ribcftopNList %>% group_by(ribcftopNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+#ribcftopNList"""
 
 #??? 
 ```
@@ -432,15 +432,171 @@ rubcftopNList
 ribcftopNList %>% 
   ggplot(aes(x = Anzahl)) + 
   geom_histogram(fill = "lightblue", color = "black") +
-  labs(title = "Verteilung der Anzahl Empfehlungen rbcif")
+  labs(title = "Verteilung der Anzahl Empfehlungen ribcf")
 ```
 
 
-Hinweis: betrachte die Verteilung der Top-15 Empfehlungen und
-beleuchte die pauschale Behauptung “Recommender Systeme machen
-für alle Nutzer die gleichen Empfehlungen”.
-```{r}
 
+```{r}
+rubcftopNList %>% 
+  ggplot(aes(x = Anzahl)) + 
+  geom_histogram(fill = "lightblue", color = "black") +
+  labs(title = "Verteilung der Anzahl Empfehlungen rubcf")
+```
+Die erwähnte Behauptung “Recommender Systeme machen für alle Nutzer die gleichen Empfehlungen” kann dank dieser Histogramme verworfen werden. Sehr viele Filme werden nur wenigen User (<4) empfohlen.
+Weiterer Text folgt.
+
+
+# Analyse Top-N Listen -Ratings
+
+Aufgabe 6: Untersuche den Einfluss von Ratings (ordinale vs binäre Ratings) und Modelltyp (IBCF vs UBCF) auf Top-N Empfehlungen für den reduzierten Datensatz. Vergleiche den Anteil übereinstimmender Empfehlungen der Top-15 Liste für
+
+## 1. IBCF vs UBCF, beide mit ordinalem Rating und Cosine Similarity für alle Testkunden,
+
+```{r}
+paste("Anzahl IBCF:", nrow(ribcftopNList))
+paste("Anzahl UBCF:", nrow(rubcftopNList))
+IntersectordRatCosine <- intersect(ribcftopNList$ribcftopNList, rubcftopNList$rubcftopNList)
+paste("Anzahl gemeinsame Empfehlungen:", length(IntersectordRatCosine))
+paste("Anteil IBCF:", length(IntersectordRatCosine) / nrow(ribcftopNList) * 100)
+paste("Anteil UBCF:", length(IntersectordRatCosine) / nrow(rubcftopNList) * 100)
+```
+
+
+## 2.IBCF vs UBCF, beide mit binärem Rating und Jaccard Similarity für alle Testkunden,
+
+```{r}
+training_bin <- binarize(training, minRating = 4)
+test_bin <- binarize(test, minRating = 4)
+
+ribcf_bin <- Recommender(training_bin, "IBCF", param=list(k= 30, method = "jaccard"))
+ribcf_bin
+rubcf_bin <- Recommender(training_bin, "UBCF", param=list(nn= 30, method = "jaccard"))
+rubcf_bin
+```
+
+```{r}
+ribcftopNList_bin = predict(ribcf_bin, test_bin, n=15)
+ribcftopNList_bin
+rubcftopNList_bin = predict(rubcf_bin, test_bin, n=15)
+rubcftopNList_bin
+```
+
+```{r}
+ribcftopNList_bin <- as(ribcftopNList_bin, "list")
+ribcftopNList_bin <- combine(ribcftopNList_bin)
+ribcftopNList_bin <- data.frame(ribcftopNList_bin)
+
+ribcftopNList_bin <- ribcftopNList_bin %>%
+  group_by(ribcftopNList_bin) %>%
+  summarise(Anzahl = n()) %>%
+  arrange(desc(Anzahl))
+
+ribcftopNList_bin
+
+rubcftopNList_bin <- as(rubcftopNList_bin, "list")
+rubcftopNList_bin <- combine(rubcftopNList_bin)
+rubcftopNList_bin <- data.frame(rubcftopNList_bin)
+
+rubcftopNList_bin <- rubcftopNList_bin %>%
+  group_by(rubcftopNList_bin) %>%
+  summarise(Anzahl = n()) %>%
+  arrange(desc(Anzahl))
+
+rubcftopNList_bin
+```
+
+```{r}
+paste("Anzahl IBCF binär:", nrow(ribcftopNList_bin))
+paste("Anzahl UBCF binär:", nrow(rubcftopNList_bin))
+IntersectbinRatJaccard <- intersect(ribcftopNList_bin$ribcftopNList_bin, rubcftopNList_bin$rubcftopNList_bin)
+paste("Anzahl gemeinsame Empfehlungen binär:", length(IntersectbinRatJaccard))
+paste("Anteil IBCF binär:", length(IntersectbinRatJaccard) / nrow(ribcftopNList_bin) * 100)
+paste("Anteil UBCF binär:", length(IntersectbinRatJaccard) / nrow(rubcftopNList_bin) * 100)
+```
+Zu diskutieren: Wieso sind die Anzahl Übereinstimmungen am höchsten sind, wenn minRating 5 ist.
+
+
+## 3.UBCF mit ordinalem (Cosine Similarity) vs UBCF mit binärem Rating (Jaccard Similarity) für alle Testkunden.
+
+```{r}
+paste("Anzahl UBCF:", nrow(rubcftopNList))
+paste("Anzahl UBCF binär:", nrow(rubcftopNList_bin))
+Intersectmixed <- intersect(rubcftopNList$rubcftopNList, rubcftopNList_bin$rubcftopNList_bin)
+paste("Anzahl gemeinsame Empfehlungen gemischt:", length(Intersectmixed))
+paste("Anzahl UBCF:", length(Intersectmixed) / nrow(rubcftopNList) * 100)
+paste("Anteil UBCF binär:", length(Intersectmixed) / nrow(rubcftopNList_bin) * 100)
+```
+
+```{r}
+#Histogramm der Vergleiche
+```
+
+
+# Analyse Top-N Listen -IBCF vs SVD
+
+## Aufgabe 7: Vergleiche
+
+Memory-based IBCF und Modell-based SVD Recommenders bezüglich Überschneidung ihrer Top-N Empfehlungen für die User-Item Matrix des reduzierten Datensatzes (Basis: reduzierter Datensatz, IBCF mit 30 Nachbarn und Cosine Similarity).
+
+Vergleiche wie sich der Anteil übereinstimmender Empfehlungen der Top-15 Liste für IBCF vs verschiedene SVD Modelle verändert, wenn die Anzahl der Singulärwerte für SVD von 10 auf 20, 30, 40, 50 verändert wird.
+
+```{r}
+rsvd10 <- Recommender(training, "SVD", param=list(k= 10))
+rsvd10topNList = predict(rsvd10, test, n=15)
+rsvd20 <- Recommender(training, "SVD", param=list(k= 20))
+rsvd20topNList = predict(rsvd20, test, n=15)
+rsvd30 <- Recommender(training, "SVD", param=list(k= 30))
+rsvd30topNList = predict(rsvd30, test, n=15)
+rsvd40 <- Recommender(training, "SVD", param=list(k= 40))
+rsvd40topNList = predict(rsvd40, test, n=15)
+rsvd50 <- Recommender(training, "SVD", param=list(k= 50))
+rsvd50topNList = predict(rsvd50, test, n=15)
+```
+
+```{r}
+rsvd10topNList <- as(rsvd10topNList, "list")
+rsvd10topNList <- combine(rsvd10topNList)
+rsvd10topNList <- data.frame(rsvd10topNList)
+rsvd10topNList <- rsvd10topNList %>% group_by(rsvd10topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+rsvd20topNList <- as(rsvd20topNList, "list")
+rsvd20topNList <- combine(rsvd20topNList)
+rsvd20topNList <- data.frame(rsvd20topNList)
+rsvd20topNList <- rsvd20topNList %>% group_by(rsvd20topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+rsvd30topNList <- as(rsvd30topNList, "list")
+rsvd30topNList <- combine(rsvd30topNList)
+rsvd30topNList <- data.frame(rsvd30topNList)
+rsvd30topNList <- rsvd30topNList %>% group_by(rsvd30topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+rsvd40topNList <- as(rsvd40topNList, "list")
+rsvd40topNList <- combine(rsvd40topNList)
+rsvd40topNList <- data.frame(rsvd40topNList)
+rsvd40topNList <- rsvd40topNList %>% group_by(rsvd40topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+rsvd50topNList <- as(rsvd50topNList, "list")
+rsvd50topNList <- combine(rsvd50topNList)
+rsvd50topNList <- data.frame(rsvd50topNList)
+rsvd50topNList <- rsvd50topNList %>% group_by(rsvd50topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+```
+
+```{r}
+IntersectIBCFSVD10 <- intersect(ribcftopNList$ribcftopNList, rsvd10topNList$rsvd10topNList)
+paste("Anzahl gemeinsame Empfehlungen SVD10:", length(IntersectIBCFSVD10))
+paste("Anteil SVD10:", length(IntersectIBCFSVD10) / nrow(rsvd10topNList) * 100)
+
+IntersectIBCFSVD20 <- intersect(ribcftopNList$ribcftopNList, rsvd20topNList$rsvd20topNList)
+paste("Anzahl gemeinsame Empfehlungen SVD20:", length(IntersectIBCFSVD20))
+paste("Anteil SVD20:", length(IntersectIBCFSVD20) / nrow(rsvd20topNList) * 100)
+
+IntersectIBCFSVD30 <- intersect(ribcftopNList$ribcftopNList, rsvd30topNList$rsvd30topNList)
+paste("Anzahl gemeinsame Empfehlungen SVD30:", length(IntersectIBCFSVD30))
+paste("Anteil SVD30:", length(IntersectIBCFSVD30) / nrow(rsvd30topNList) * 100)
+
+IntersectIBCFSVD40 <- intersect(ribcftopNList$ribcftopNList, rsvd40topNList$rsvd40topNList)
+paste("Anzahl gemeinsame Empfehlungen SVD40:", length(IntersectIBCFSVD40))
+paste("Anteil SVD40:", length(IntersectIBCFSVD40) / nrow(rsvd40topNList) * 100)
+
+IntersectIBCFSVD50 <- intersect(ribcftopNList$ribcftopNList, rsvd50topNList$rsvd50topNList)
+paste("Anzahl gemeinsame Empfehlungen SVD50:", length(IntersectIBCFSVD50))
+paste("Anteil SVD50:", length(IntersectIBCFSVD50) / nrow(rsvd50topNList) * 100)
 ```
 
 
