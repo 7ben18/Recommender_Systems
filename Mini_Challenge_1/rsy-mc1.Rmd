@@ -225,6 +225,8 @@ MovieLenseCut <- MovieLenseToCut %>%
 
 MovieLenseCut <- MovieLenseCut %>% 
   filter(item %in% c(MovieLense700Items$item))
+
+
 ```
 
 Untersuche und dokumentiere die Eigenschaften des reduzierten Datensatzes und beschreibe den Effekt der Datenreduktion, d.h.
@@ -286,21 +288,14 @@ MovieLenseCut %>%
 ## 1. Zerlege den reduzierten MovieLense Datensatz in ein disjunktes Trainings-und Testdatenset im Verhältnis 4:1,
 
 ```{r}
-MovieLenseCut
+training <- MovieLenseCompact[1:320] 
+test <- MovieLenseCompact[321:400]
 
-set.seed(1234)
-training <- MovieLenseCut %>% sample_frac(0.8)
 training
-
-test <- anti_join(MovieLenseCut, training, by = c("user", "item", "rating"))
 test
-
-training <- as(training, "realRatingMatrix")  
-test <- as(test, "realRatingMatrix")
-
 ```
 
-## 2. Trainiere ein IBCF Modell mit 30 Nachbarn und Cosine Similarity,
+## 2. Trainiere ein IBCF Modell mit 30 Nachbarn und Cosine Similarity
 
 ```{r}
 ribcf <- Recommender(training, "IBCF", param=list(k= 30, method = "cosine"))
@@ -315,17 +310,138 @@ names(getModel(ribcf))
 
 ```{r}
 getModel(ribcf)$topN
+
+# ??? 
 ```
 
 
 ##4. Bestimme die Filme, die am häufigsten in der Cosine-Ähnlichkeitsmatrix auftauchen und analysiere deren Vorkommen und Ratings im reduzierten Datensatz.
 
 ```{r}
-ribcftopNList = predict(ribcf, test, n=10)
-ribcftopNList
+"ribcftopNList <- as(ribcftopNList, "list")
+ribcftopNList <- combine(ribcftopNList)
+ribcftopNList <- data.frame(ribcftopNList)
+ribcftopNList <- ribcftopNList %>% group_by(ribcftopNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+ribcftopNList"""
+
+#??? 
 ```
 
 
+
+
+# Implementierung Ähnlichkeitsmatrix
+Aufgabe 4 (DIY): Implementiere eine Funktion zur effizienten
+Berechnung von sparsen Ähnlichkeitsmatrizen für IBCF RS und
+analysiere die Resultate für 100 zufällig gewählte Filme.
+
+
+
+## 1. Implementiere eine Funktion, um (a) für ordinale Ratings effizient
+die Cosine Similarity und (b) für binäre Ratings effizient die Jaccard
+Similarity zu berechnen,
+
+```{r}
+as(MovieLenseCompact, "data.frame")
+```
+
+
+### Cosine Similarity 
+```{r}
+"cosin_sim <- t(MovieLenseCompact) / sqrt(rowSums(t(MovieLenseCompact) * t(MovieLenseCompact)))
+                                   
+cosin_sim_mat <- cosin_sim %*% t(cosin_sim)"""
+```
+
+### Jaccard Similarity
+```{r}
+
+```
+
+
+
+## 2. Vergleiche deine Implementierung der Cosine-basierten
+Ähnlichkeitsmatrix für ordinale Ratings mit der via recommenderlab
+und einem anderen R-Paket erzeugten Ähnlichkeitsmatrix,
+
+```{r}
+
+```
+
+##3. Vergleiche deine mittels Cosine Similarity erzeugten Ähnlichkeitsmatrix für ordinale Ratings mit der Jaccard-basierten
+Ähnlichkeitsmatrix für binäre Ratings.
+
+```{r}
+
+```
+
+
+# Analyse Top-N Listen - IBCF vs UBCF
+Aufgabe 5: Vergleiche und diskutiere Top-N Empfehlungen von IBCF
+und UBCF Modellen mit 30 Nachbarn und Cosine Similarity für den
+reduzierten Datensatz.
+
+## 1. Berechne Top-15 Empfehlungen für Testkunden mit IBCF und UBCF 
+
+### ribcf & rubcf Modell trainieren
+```{r}
+ribcf <- Recommender(training, "IBCF", param=list(k= 30, method = "cosine"))
+ribcf
+rubcf <- Recommender(training, "UBCF", param=list(nn= 30, method = "cosine"))
+rubcf
+```
+### Model Predicitions erstellen
+```{r}
+ribcftopNList = predict(ribcf, test, n=15)
+ribcftopNList
+
+rubcftopNList = predict(rubcf, test, n=15)
+rubcftopNList
+```
+
+### ## 2. Vergleiche die Top-15 Empfehlungen und deren Verteilung und
+diskutiere Gemeinsamkeiten und Unterschiede zwischen IBCF und
+UBCF für alle Testkunden.
+
+```{r}
+ribcftopNList <- as(ribcftopNList, "list")
+ribcftopNList <- combine(ribcftopNList)
+ribcftopNList <- data.frame(ribcftopNList)
+
+ribcftopNList <- ribcftopNList %>%
+  group_by(ribcftopNList) %>%
+  summarise(Anzahl = n()) %>%
+  arrange(desc(Anzahl))
+ribcftopNList
+
+
+rubcftopNList <- as(rubcftopNList, "list")
+rubcftopNList <- combine(rubcftopNList)
+rubcftopNList <- data.frame(rubcftopNList)
+
+rubcftopNList <- rubcftopNList %>%
+  group_by(rubcftopNList) %>%
+  summarise(Anzahl = n()) %>%
+  arrange(desc(Anzahl))
+
+rubcftopNList
+```
+
+### Verteilungen visualisieren
+```{r}
+ribcftopNList %>% 
+  ggplot(aes(x = Anzahl)) + 
+  geom_histogram(fill = "lightblue", color = "black") +
+  labs(title = "Verteilung der Anzahl Empfehlungen rbcif")
+```
+
+
+Hinweis: betrachte die Verteilung der Top-15 Empfehlungen und
+beleuchte die pauschale Behauptung “Recommender Systeme machen
+für alle Nutzer die gleichen Empfehlungen”.
+```{r}
+
+```
 
 
 
