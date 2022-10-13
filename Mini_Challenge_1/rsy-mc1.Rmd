@@ -348,9 +348,9 @@ as(MovieLenseCompact, "data.frame")
 
 ### Cosine Similarity 
 ```{r}
-"cosin_sim <- t(MovieLenseCompact) / sqrt(rowSums(t(MovieLenseCompact) * t(MovieLenseCompact)))
+#"cosin_sim <- t(MovieLenseCompact) / sqrt(rowSums(t(MovieLenseCompact) * t(MovieLenseCompact)))
                                    
-cosin_sim_mat <- cosin_sim %*% t(cosin_sim)"""
+#cosin_sim_mat <- cosin_sim %*% t(cosin_sim)"""
 ```
 
 ### Jaccard Similarity
@@ -399,31 +399,30 @@ rubcftopNList = predict(rubcf, test, n=15)
 rubcftopNList
 ```
 
-### ## 2. Vergleiche die Top-15 Empfehlungen und deren Verteilung und
+### 2. Vergleiche die Top-15 Empfehlungen und deren Verteilung und
 diskutiere Gemeinsamkeiten und Unterschiede zwischen IBCF und
 UBCF für alle Testkunden.
 
 ```{r}
-ribcftopNList <- as(ribcftopNList, "list")
-ribcftopNList <- combine(ribcftopNList)
-ribcftopNList <- data.frame(ribcftopNList)
+cftopNList_to_df <- function(cftopNList, namedf){
+  temp <- as(cftopNList, "list") %>% combine() %>% data.frame()
+  colnames(temp)[1]  <- namedf
+  temp <- temp %>%
+    group_by_at(1) %>%
+    summarise(Anzahl = n()) %>%
+    arrange(desc(Anzahl))
+  temp
+}
+```
 
-ribcftopNList <- ribcftopNList %>%
-  group_by(ribcftopNList) %>%
-  summarise(Anzahl = n()) %>%
-  arrange(desc(Anzahl))
+
+
+```{r}
+ribcftopNList <- cftopNList_to_df(ribcftopNList, "ribcftopNList")
 ribcftopNList
 
 
-rubcftopNList <- as(rubcftopNList, "list")
-rubcftopNList <- combine(rubcftopNList)
-rubcftopNList <- data.frame(rubcftopNList)
-
-rubcftopNList <- rubcftopNList %>%
-  group_by(rubcftopNList) %>%
-  summarise(Anzahl = n()) %>%
-  arrange(desc(Anzahl))
-
+rubcftopNList <- cftopNList_to_df(rubcftopNList, "rubcftopNList")
 rubcftopNList
 ```
 
@@ -447,7 +446,7 @@ Die erwähnte Behauptung “Recommender Systeme machen für alle Nutzer die glei
 Weiterer Text folgt.
 
 
-# Analyse Top-N Listen -Ratings
+# Analyse Top-N Listen - Ratings
 
 Aufgabe 6: Untersuche den Einfluss von Ratings (ordinale vs binäre Ratings) und Modelltyp (IBCF vs UBCF) auf Top-N Empfehlungen für den reduzierten Datensatz. Vergleiche den Anteil übereinstimmender Empfehlungen der Top-15 Liste für
 
@@ -599,5 +598,56 @@ paste("Anzahl gemeinsame Empfehlungen SVD50:", length(IntersectIBCFSVD50))
 paste("Anteil SVD50:", length(IntersectIBCFSVD50) / nrow(rsvd50topNList) * 100)
 ```
 
+# Implementierung Top-N Metriken
+
+# Wahl des optimalen Recommenders
+
+## Aufgabe 9
+
+### 1. Verwende für die Evaluierung 10-fache Kreuzvalidierung
+```{r}
+set.seed(1234)
+scheme <- evaluationScheme(MovieLenseCompact, method="cross-validation", k = 10, given=3, goodRating=5)
+scheme
+```
 
 
+### 2. Begründe deine Wahl von Metriken und Modell
+
+```{r}
+algorithms <- list("hybrid" = list(name = "HYBRID", param =list(recommenders = list(SVD = list(name="SVD", param=list(k = 40)),
+                                                                                    POPULAR = list(name = "POPULAR", param = NULL)
+                                                                                    ))),
+                   "libmf" = list(name="LIBMF", param=list(dim=10)),
+                   "popular items" = list(name="POPULAR", param=NULL),
+                   "user-based CF" = list(name="UBCF", param=list(nn=50)),
+                   "item-based CF" = list(name="IBCF", param=list(k=50)),
+                   "SVD40" = list(name="SVD", param=list(k = 40)))
+results <- evaluate(scheme, algorithms, type = "topNList", n=c(10, 15, 20, 25, 30))
+```
+
+```{r}
+plot(results, annotate=c(1,3), legend="topleft")
+```
+
+### 3. Analysiere das beste Modell für Top-N Recommendations mit N = 10, 15, 20, 25 und 30,
+vieles blabaalabaaassss
+
+
+### 4. Optimiere dein bestes Modell hinsichtlich Hyperparametern
+
+```{r}
+algorithmsimprovedrecom <- list("popular items center" = list(name="POPULAR", param=NULL),
+                   "popular items Z-score" = list(name="POPULAR", param=list(normalize="Z-score")))
+resultsimprovedrecom <- evaluate(scheme, algorithmsimprovedrecom, type = "topNList", n=c(10, 15, 20, 25, 30))
+```
+
+```{r}
+plot(resultsimprovedrecom, annotate=c(1,3), legend="topleft")
+```
+
+
+Hinweis: Verwende für den Top-Movie Recommender die Filme mit den höchsten Durchschnittsratings.
+
+
+# Implementierung Top-N Monitor

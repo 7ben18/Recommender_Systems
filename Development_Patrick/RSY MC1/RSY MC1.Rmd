@@ -259,7 +259,7 @@ aufgrund der bisher gemachten Erkenntnisse und verwende als 6.
 Modell einen Top Movie Recommender (Basis: reduzierter Datensatz).
 ```{r}
 set.seed(1234)
-scheme <- evaluationScheme(smallMovieLense, method="cross", k = 10, given=-5, goodRating=5)
+scheme <- evaluationScheme(smallMovieLense, method="cross-validation", k = 10, given=-5, goodRating=5)
 scheme
 ```
 
@@ -285,4 +285,3 @@ resultsimprovedrecom <- evaluate(scheme, algorithmsimprovedrecom, type = "topNLi
 ```{r}
 plot(resultsimprovedrecom, annotate=c(1,3), legend="topleft")
 ```
-
