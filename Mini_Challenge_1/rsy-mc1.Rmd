@@ -343,19 +343,20 @@ Similarity zu berechnen,
 
 ```{r}
 as(MovieLenseCompact, "data.frame")
+DfforSimMatrix <- getRatingMatrix(MovieLenseCompact)
 ```
 
 
 ### Cosine Similarity 
 ```{r}
-#"cosin_sim <- t(MovieLenseCompact) / sqrt(rowSums(t(MovieLenseCompact) * t(MovieLenseCompact)))
-                                   
-#cosin_sim_mat <- cosin_sim %*% t(cosin_sim)"""
+cosin_sim <- t(DfforSimMatrix) / sqrt(rowSums(t(DfforSimMatrix) * t(DfforSimMatrix)))
+cosin_sim_mat <- cosin_sim %*% t(cosin_sim)
+#cosin_sim_mat
 ```
 
 ### Jaccard Similarity
 ```{r}
-
+# Noch zu kopieren aus Vorlage
 ```
 
 
@@ -364,6 +365,17 @@ as(MovieLenseCompact, "data.frame")
 Ähnlichkeitsmatrix für ordinale Ratings mit der via recommenderlab
 und einem anderen R-Paket erzeugten Ähnlichkeitsmatrix,
 
+```{r}
+library(lsa)
+
+rec_simMat <- similarity(MovieLenseCompact[,1:3], which = "items")
+rec_simMat
+
+# simMat_lsa <- cosine(DfforSimMatrix, y = NULL)
+```
+
+
+Platzhalter für Rescaling der Matrizen
 ```{r}
 
 ```
