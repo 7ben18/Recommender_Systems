@@ -482,26 +482,10 @@ rubcftopNList_bin
 ```
 
 ```{r}
-ribcftopNList_bin <- as(ribcftopNList_bin, "list")
-ribcftopNList_bin <- combine(ribcftopNList_bin)
-ribcftopNList_bin <- data.frame(ribcftopNList_bin)
-
-ribcftopNList_bin <- ribcftopNList_bin %>%
-  group_by(ribcftopNList_bin) %>%
-  summarise(Anzahl = n()) %>%
-  arrange(desc(Anzahl))
-
+ribcftopNList_bin <- cftopNList_to_df(ribcftopNList_bin, "ribcftopNList_bin")
 ribcftopNList_bin
 
-rubcftopNList_bin <- as(rubcftopNList_bin, "list")
-rubcftopNList_bin <- combine(rubcftopNList_bin)
-rubcftopNList_bin <- data.frame(rubcftopNList_bin)
-
-rubcftopNList_bin <- rubcftopNList_bin %>%
-  group_by(rubcftopNList_bin) %>%
-  summarise(Anzahl = n()) %>%
-  arrange(desc(Anzahl))
-
+rubcftopNList_bin <- cftopNList_to_df(rubcftopNList_bin, "rubcftopNList_bin")
 rubcftopNList_bin
 ```
 
@@ -540,41 +524,35 @@ Memory-based IBCF und Modell-based SVD Recommenders bezüglich Überschneidung i
 
 Vergleiche wie sich der Anteil übereinstimmender Empfehlungen der Top-15 Liste für IBCF vs verschiedene SVD Modelle verändert, wenn die Anzahl der Singulärwerte für SVD von 10 auf 20, 30, 40, 50 verändert wird.
 
-```{r}
-rsvd10 <- Recommender(training, "SVD", param=list(k= 10))
-rsvd10topNList = predict(rsvd10, test, n=15)
-rsvd20 <- Recommender(training, "SVD", param=list(k= 20))
-rsvd20topNList = predict(rsvd20, test, n=15)
-rsvd30 <- Recommender(training, "SVD", param=list(k= 30))
-rsvd30topNList = predict(rsvd30, test, n=15)
-rsvd40 <- Recommender(training, "SVD", param=list(k= 40))
-rsvd40topNList = predict(rsvd40, test, n=15)
-rsvd50 <- Recommender(training, "SVD", param=list(k= 50))
-rsvd50topNList = predict(rsvd50, test, n=15)
-```
 
 ```{r}
-rsvd10topNList <- as(rsvd10topNList, "list")
-rsvd10topNList <- combine(rsvd10topNList)
-rsvd10topNList <- data.frame(rsvd10topNList)
-rsvd10topNList <- rsvd10topNList %>% group_by(rsvd10topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
-rsvd20topNList <- as(rsvd20topNList, "list")
-rsvd20topNList <- combine(rsvd20topNList)
-rsvd20topNList <- data.frame(rsvd20topNList)
-rsvd20topNList <- rsvd20topNList %>% group_by(rsvd20topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
-rsvd30topNList <- as(rsvd30topNList, "list")
-rsvd30topNList <- combine(rsvd30topNList)
-rsvd30topNList <- data.frame(rsvd30topNList)
-rsvd30topNList <- rsvd30topNList %>% group_by(rsvd30topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
-rsvd40topNList <- as(rsvd40topNList, "list")
-rsvd40topNList <- combine(rsvd40topNList)
-rsvd40topNList <- data.frame(rsvd40topNList)
-rsvd40topNList <- rsvd40topNList %>% group_by(rsvd40topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
-rsvd50topNList <- as(rsvd50topNList, "list")
-rsvd50topNList <- combine(rsvd50topNList)
-rsvd50topNList <- data.frame(rsvd50topNList)
-rsvd50topNList <- rsvd50topNList %>% group_by(rsvd50topNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
+generate_SVD_topNList<- function(ksvd){
+	temp <- Recommender(training, "SVD", param=list(k= ksvd))
+	temp = predict(temp, test, n=15)
+  temp
+}
 ```
+
+
+```{r}
+rsvd10topNList <- generate_SVD_topNList(10)
+rsvd20topNList <- generate_SVD_topNList(20)
+rsvd30topNList <- generate_SVD_topNList(30)
+rsvd40topNList <- generate_SVD_topNList(40)
+rsvd50topNList <- generate_SVD_topNList(50)
+```
+
+
+
+```{r}
+rsvd10topNList <- cftopNList_to_df(rsvd10topNList, "rsvd10topNList")
+rsvd20topNList <- cftopNList_to_df(rsvd20topNList, "rsvd20topNList")
+rsvd30topNList <- cftopNList_to_df(rsvd30topNList, "rsvd30topNList")
+rsvd40topNList <- cftopNList_to_df(rsvd40topNList, "rsvd40topNList")
+rsvd50topNList <- cftopNList_to_df(rsvd50topNList, "rsvd50topNList")
+```
+
+
 
 ```{r}
 IntersectIBCFSVD10 <- intersect(ribcftopNList$ribcftopNList, rsvd10topNList$rsvd10topNList)
