@@ -8,7 +8,6 @@ output:
 ---
 # Mini-Challenge Beschreibung
 
-
 # Daten und Libraries
 ```{r}
 library(tidyverse)
@@ -110,29 +109,12 @@ MovieLenseEDA_Joined %>%
   filter(is_genre == 1) %>% 
   ggplot(aes(x = rating)) +
   geom_bar(fill = "lightblue", color = "black") + 
+  labs(x = "Ratings", 
+       y = "Anzahl", 
+       title = "Kundenratings Gesamthaft",
+       subtitle = "MovieLenseData")
   facet_wrap(~Genre)
 ```
-
-```{r}
-
-
-MovieLenseHistoGenreRating <- MovieLenseEDA_Joined %>% 
-  select(-c("item", "user", "year", "url")) %>% 
-  pivot_longer(cols=c("unknown", "Action", "Adventure", "Animation", "Children's",
-                      "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
-                      "Film-Noir", "Horror", "Musical", "Mystery", "Horror",
-                      "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller",
-                      "War", "Western"),
-               names_to = "Genre", values_to = "X") %>%
-  group_by(Genre, rating) %>%
-  summarize(Anzahl = n()) 
-  
-MovieLenseHistoGenreRating$rating <- as.factor(MovieLenseHistoGenreRating$rating)
-
-MovieLenseHistoGenreRating 
-# ToDO Vis fehlt
-```
-
 
 ## 3. Wie verteilen sich die mittleren Kundenratings pro Film?
 ```{r}
