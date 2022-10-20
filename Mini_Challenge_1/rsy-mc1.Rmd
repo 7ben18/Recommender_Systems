@@ -97,7 +97,6 @@ MovieLenseEDA_Joined %>% group_by(rating) %>%
 
 ### Verteilung der Kundenratings nach Genre
 ```{r}
-# DataFrame reshape 
 MovieLenseEDA_Joined$rating <- as.integer(MovieLenseEDA_Joined$rating)
 
 MovieLenseEDA_Joined %>% 
@@ -107,26 +106,12 @@ MovieLenseEDA_Joined %>%
                       "Film-Noir", "Horror", "Musical", "Mystery", "Horror",
                       "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller",
                       "War", "Western"),
-               names_to = "Genre", values_to = "is_genre") %>% 
+               names_to = "Genre", values_to = "is_genre") %>%
   filter(is_genre == 1) %>% 
   ggplot(aes(x = rating)) +
   geom_bar(fill = "lightblue", color = "black") + 
   facet_wrap(~Genre)
 ```
-
-```{r}
-MovieLenseEDA_Joined %>% 
-  select(-c("item", "user", "year", "url")) %>% 
-  pivot_longer(cols=c("unknown", "Action", "Adventure", "Animation", "Children's",
-                      "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
-                      "Film-Noir", "Horror", "Musical", "Mystery", "Horror",
-                      "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller",
-                      "War", "Western"),
-               names_to = "Genre", values_to = "is_genre") %>% 
-  filter(is_genre == 1) 
-```
-
-
 
 ```{r}
 
