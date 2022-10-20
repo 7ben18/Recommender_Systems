@@ -108,11 +108,11 @@ MovieLenseEDA_Joined %>%
                names_to = "Genre", values_to = "is_genre") %>%
   filter(is_genre == 1) %>% 
   ggplot(aes(x = rating)) +
-  geom_bar(fill = "lightblue", color = "black") + 
+  geom_bar(fill = "lightblue", color = "black") +
   labs(x = "Ratings", 
        y = "Anzahl", 
-       title = "Kundenratings Gesamthaft",
-       subtitle = "MovieLenseData")
+       title = "Verteilung der Kundenratings nach Genre",
+       subtitle = "MovieLenseData") + 
   facet_wrap(~Genre)
 ```
 
@@ -125,18 +125,19 @@ MovieLenseEDA %>%
   geom_histogram(color = "black", fill = "lightblue", binwidth = 0.5) +
     labs(x = "Ratings", 
        y = "Anzahl", 
-       title = "Mittlere Kundenratings verteilung",
+       title = "Verteilung der Mittlere Kundenratings",
        subtitle = "MovieLenseData")
-
 ```
 
 ## 4. Wie stark streuen die Ratings von individuellen Kunden?
 ```{r}
 MovieLenseEDA %>% filter(user == c(1:9)) %>% 
   ggplot(aes(x = user, y = rating)) +
-  geom_violin(color = "black", fill = "lightblue") 
-
-# Beschriftung und Farbe
+  geom_violin(color = "black", fill = "lightblue") +
+  labs(x = "User", 
+       y = "Ratings", 
+       title = "Streueung der Ratings von individuellen Kunden (1-9)",
+       subtitle = "MovieLenseData")
 ```
 
 ## 5. Welchen Einfluss hat die Normierung der Ratings pro Kunde auf deren Verteilung?
@@ -146,21 +147,38 @@ MovieLenseEDA_Normalized <- (as(MovieLensenormalized, "data.frame"))
 
 MovieLenseEDA_Normalized %>% filter(user == c(1:9)) %>% 
   ggplot(aes(x = user, y = rating)) +
-  geom_violin(color = "black", fill = "lightblue") 
-
-# Labelings & Interpreation
-
+  geom_violin(color = "black", fill = "lightblue") +
+  labs(x = "User", 
+       y = "Normalisierte Ratings", 
+       title = "Normalisierte Streueung der Ratings von individuellen Kunden (1-9)",
+       subtitle = "MovieLenseData")
 ```
+
+```{r}
+MovieLense
+```
+
 
 ## 6. Welche strukturellen Charakteristika (z.B. Sparsity) und Auffälligkeiten zeigt die User-Item Matrix?
 ```{r}
-image(MovieLense) 
+image(x = MovieLense, 
+      xlab = "Items", 
+      ylab = "Users", 
+      main = "Sparisty 943 x 1664 User-Item Matrix 943 x 1664") 
 
-# Labeling + Interpreation + Antwort fehlt. 
-# Aufsteigend nach Anzahl bewertete Filmen
-# Film Besonders die ersten 400 Filme wurden am meisten bewrtet.
-# User kein Muster erkennbar
+image(MovieLense[1:50,1:50],
+      xlab = "Items",
+      ylab = "Users", 
+      main = "Sparisty 50 x 50 User-Item Matrix")
+
+# nratings(MovieLense) zaehlt die Anzahl vorhandenen Kombinationen von User und Items
+100 - (nratings(MovieLense) / (dim(MovieLense)[1] * dim(MovieLense)[2]) * 100)
+
+# Anzahl Ratings pro User
+summary(rowCounts(MovieLense))
 ```
+Jede Zeile von MovieLense entspricht einem Benutzer und jede Spalte einem Film. Gesamthaft gibt es 943 x 1664 = 1’569’152 Kombinationen zwischen User und Film. Allerdings hat nicht jeder Nutzer jeden Film gesehen, aus diesem Grund ist es wichtig die Sparisy Matrix zu betrachten. In MovieLense Matrix fehlen ca. 93% der Kombinationen. Ca. 7 % kann man einen Film einem User zuweisen. 
+
 
 ```{r}
 # nratings => Gibt mir die Anzahl Bewerteten Filme in der Matrix
@@ -176,6 +194,11 @@ nratings(MovieLense) / (dim(MovieLense)[1] * dim(MovieLense)[2]) * 100
 ```{r}
 MovieLenseToCut <- as(MovieLense, "data.frame")
 ```
+
+```{r}
+MovieLenseToCut
+```
+
 
 ### Auswahl der 400 Kunden
 ```{r}
@@ -206,6 +229,10 @@ MovieLenseCut <- MovieLenseCut %>%
   filter(item %in% c(MovieLense700Items$item))
 
 
+```
+
+```{r}
+MovieLenseCut
 ```
 
 Untersuche und dokumentiere die Eigenschaften des reduzierten Datensatzes und beschreibe den Effekt der Datenreduktion, d.h.
