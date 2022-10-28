@@ -172,20 +172,10 @@ image(MovieLense[1:50,1:50],
       main = "Sparisty 50 x 50 User-Item Matrix")
 
 # nratings(MovieLense) zaehlt die Anzahl vorhandenen Kombinationen von User und Items
-100 - (nratings(MovieLense) / (dim(MovieLense)[1] * dim(MovieLense)[2]) * 100)
-
-# Anzahl Ratings pro User
-summary(rowCounts(MovieLense))
+(nratings(MovieLense) / (dim(MovieLense)[1] * dim(MovieLense)[2]) * 100)
 ```
-Jede Zeile von MovieLense entspricht einem Benutzer und jede Spalte einem Film. Gesamthaft gibt es 943 x 1664 = 1’569’152 Kombinationen zwischen User und Film. Allerdings hat nicht jeder Nutzer jeden Film gesehen, aus diesem Grund ist es wichtig die Sparisy Matrix zu betrachten. In MovieLense Matrix fehlen ca. 93% der Kombinationen. Ca. 7 % kann man einen Film einem User zuweisen. 
+Jede Zeile von MovieLense entspricht einem Benutzer und jede Spalte einem Film. Gesamthaft gibt es 943 x 1664 = 1’569’152 Kombinationen zwischen User und Film. Allerdings hat nicht jeder Nutzer jeden Film gesehen, aus diesem Grund ist es wichtig die Sparisy Matrix zu betrachten. In MovieLense Matrix fehlen ca. 94% der Kombinationen. Ca. 6 % ist die Sparse Matrix gefuellt mit Werten. 
 
-
-```{r}
-# nratings => Gibt mir die Anzahl Bewerteten Filme in der Matrix
-# dim(MovieLense) gibt mir die Dimension (Zeilen, Spalten)
-
-nratings(MovieLense) / (dim(MovieLense)[1] * dim(MovieLense)[2]) * 100
-```
 
 # Datenreduktion
 ## Aufgabe 2: Reduziere den MovieLense Datensatz auf rund 400 Kunden und 700 Filme, indem du Filme und Kunden mit sehr wenigen Ratings entfernst.
@@ -227,8 +217,6 @@ MovieLenseCut <- MovieLenseToCut %>%
 
 MovieLenseCut <- MovieLenseCut %>% 
   filter(item %in% c(MovieLense700Items$item))
-
-
 ```
 
 ```{r}
@@ -246,9 +234,7 @@ image(MovieLense)
 
 ```{r}
 nratings(MovieLense) / (dim(MovieLense)[1] * dim(MovieLense)[2]) * 100
-
 ```
-
 
 ### Nach Datenreduktion
 ```{r}
@@ -259,12 +245,11 @@ image(MovieLenseCompact)
 ### Vergleich der Sparsity
 ```{r}
 nratings(MovieLenseCompact) / (dim(MovieLenseCompact)[1] * dim(MovieLenseCompact)[2]) * 100
-
-# Interpreation
 ```
+Durch die Datenreduktion hat nun die Sparsity Matrix eine Dimension von 400 x 700, sprich sind
+280’000 Ratingfelder vorhanden. Davon sind nur ca. 24% mit tatsächlichen ratings versehen. Dies macht verglichen zu den Ursprünglichen Sparsity Matrix eine Steigerung von 18% aus. Jedoch muss man bedenken, dass die Ursprüngliche Sparsity Matrix eine Dimension von 943 x 1664 hatte, sprich Gesamthaft 1’569’152 Ratingfelder. Beziehen wir uns nur auf die Ratingfelder, so haben wir den Datensatz um 1 - (280’000 / 1’569’152) * 100 ≈ 82% reduziert.  
 
 ##2. Mittlere Kundenratings pro Film vor und nach Datenreduktion,
-
 ```{r}
 MovieLenseCut %>% 
   group_by(item) %>% 
@@ -275,15 +260,16 @@ MovieLenseCut %>%
        y = "Anzahl", 
        title = "Mittlere Kundenratings verteilung",
        subtitle = "MovieLenseData")
-  
-# Willst du eine Verteilung fuer jeden Film oder reicht dir eine Tabelle?
-
 ```
 
 ## 3. Für Gruppen: Quantifiziere “Intersection over Union” der Ratings der unterschiedlich reduzierten Datensätze.
 
 ```{r}
-# Fragezeichen? 
+#MovieLenseCut - UrsprungsdataFrame
+#MovieLenseToCut - Geschnittener DataFrame
+
+# Intersection over Union in Prozent fuer den erstn Datensatz
+nratings(MovieLenseCompact) / nratings(MovieLense) * 100
 
 ```
 
@@ -311,36 +297,55 @@ ribcf
 ## 3. Bestimme die Verteilung der Filme, welche bei IBCF für paarweise Ähnlichkeitsvergleiche verwendet werden,
 
 ```{r}
-names(getModel(ribcf))
+# get model
+ribcf_model <- getModel(ribcf)
+
+# create DataFrame 
+ribcf_sim_df <- as.data.frame(colSums(ribcf_model$sim > 0))
+
+# Item als neue Spalte hinzufuegen und Index entfernen
+ribcf_sim_df_ <- cbind(item = rownames(ribcf_sim_df), ribcf_sim_df)
+rownames(ribcf_sim_df_) <- NULL
+
+# Visualiseren mittels Histogramm
+ribcf_sim_df_ %>%
+  rename(Anzahlz = 2) %>% 
+  ggplot(aes(x = Anzahl)) + 
+  geom_histogram(binwidth =  0.1) +
+  labs(title = "Verteilung der Ähnlichkeitsvergleiche",
+       x = "Anzahl Filme als Nachbar", 
+       y = "Anzahl")
 ```
-
-```{r}
-getModel(ribcf)$topN
-
-# ??? 
-```
-
+Im Histogramm erkennt man die Anzahl Filme die als Nachbar bei einem anderen Film 
+auftauchen.  
 
 ##4. Bestimme die Filme, die am häufigsten in der Cosine-Ähnlichkeitsmatrix auftauchen und analysiere deren Vorkommen und Ratings im reduzierten Datensatz.
 
 ```{r}
-#ribcftopNList <- as(ribcftopNList, "list")
-#ribcftopNList <- combine(ribcftopNList)
-#ribcftopNList <- data.frame(ribcftopNList)
-#ribcftopNList <- ribcftopNList %>% group_by(ribcftopNList) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl))
-#ribcftopNList"""
-
-#??? 
+ribcf_sim_df_
 ```
 
 
+```{r}
+ribcf_sim_df_ %>% 
+  rename(Anzahl = 2) %>% 
+  arrange(desc(Anzahl)) %>% 
+  top_n(10) %>% 
+  ggplot(aes(x = Anzahl, y = item)) +
+  geom_col(alpha = 0.5, color = "black", fill = "limegreen")
+  
+```
 
+Top 10 Filme die am haeufigesten in der Nachbarschaft andere Filme auftauchen.
 
 # Implementierung Ähnlichkeitsmatrix
 Aufgabe 4 (DIY): Implementiere eine Funktion zur effizienten
 Berechnung von sparsen Ähnlichkeitsmatrizen für IBCF RS und
 analysiere die Resultate für 100 zufällig gewählte Filme.
 
+```{r}
+
+```
 
 
 ## 1. Implementiere eine Funktion, um (a) für ordinale Ratings effizient
@@ -408,6 +413,8 @@ ribcf
 rubcf <- Recommender(training, "UBCF", param=list(nn= 30, method = "cosine"))
 rubcf
 ```
+
+
 ### Model Predicitions erstellen
 ```{r}
 ribcftopNList = predict(ribcf, test, n=15)
@@ -434,11 +441,9 @@ cftopNList_to_df <- function(cftopNList, namedf){
 ```
 
 
-
 ```{r}
 ribcftopNList <- cftopNList_to_df(ribcftopNList, "ribcftopNList")
 ribcftopNList
-
 
 rubcftopNList <- cftopNList_to_df(rubcftopNList, "rubcftopNList")
 rubcftopNList
@@ -453,13 +458,13 @@ ribcftopNList %>%
 ```
 
 
-
 ```{r}
 rubcftopNList %>% 
   ggplot(aes(x = Anzahl)) + 
   geom_histogram(fill = "lightblue", color = "black") +
   labs(title = "Verteilung der Anzahl Empfehlungen rubcf")
 ```
+
 Die erwähnte Behauptung “Recommender Systeme machen für alle Nutzer die gleichen Empfehlungen” kann dank dieser Histogramme verworfen werden. Sehr viele Filme werden nur wenigen User (<4) empfohlen.
 Weiterer Text folgt.
 
@@ -473,7 +478,9 @@ Aufgabe 6: Untersuche den Einfluss von Ratings (ordinale vs binäre Ratings) und
 ```{r}
 paste("Anzahl IBCF:", nrow(ribcftopNList))
 paste("Anzahl UBCF:", nrow(rubcftopNList))
+
 IntersectordRatCosine <- intersect(ribcftopNList$ribcftopNList, rubcftopNList$rubcftopNList)
+
 paste("Anzahl gemeinsame Empfehlungen:", length(IntersectordRatCosine))
 paste("Anteil IBCF:", length(IntersectordRatCosine) / nrow(ribcftopNList) * 100)
 paste("Anteil UBCF:", length(IntersectordRatCosine) / nrow(rubcftopNList) * 100)
@@ -487,7 +494,9 @@ training_bin <- binarize(training, minRating = 4)
 test_bin <- binarize(test, minRating = 4)
 
 ribcf_bin <- Recommender(training_bin, "IBCF", param=list(k= 30, method = "jaccard"))
+
 ribcf_bin
+
 rubcf_bin <- Recommender(training_bin, "UBCF", param=list(nn= 30, method = "jaccard"))
 rubcf_bin
 ```
@@ -495,6 +504,7 @@ rubcf_bin
 ```{r}
 ribcftopNList_bin = predict(ribcf_bin, test_bin, n=15)
 ribcftopNList_bin
+
 rubcftopNList_bin = predict(rubcf_bin, test_bin, n=15)
 rubcftopNList_bin
 ```
@@ -510,7 +520,9 @@ rubcftopNList_bin
 ```{r}
 paste("Anzahl IBCF binär:", nrow(ribcftopNList_bin))
 paste("Anzahl UBCF binär:", nrow(rubcftopNList_bin))
+
 IntersectbinRatJaccard <- intersect(ribcftopNList_bin$ribcftopNList_bin, rubcftopNList_bin$rubcftopNList_bin)
+
 paste("Anzahl gemeinsame Empfehlungen binär:", length(IntersectbinRatJaccard))
 paste("Anteil IBCF binär:", length(IntersectbinRatJaccard) / nrow(ribcftopNList_bin) * 100)
 paste("Anteil UBCF binär:", length(IntersectbinRatJaccard) / nrow(rubcftopNList_bin) * 100)
@@ -523,7 +535,9 @@ Zu diskutieren: Wieso sind die Anzahl Übereinstimmungen am höchsten sind, wenn
 ```{r}
 paste("Anzahl UBCF:", nrow(rubcftopNList))
 paste("Anzahl UBCF binär:", nrow(rubcftopNList_bin))
+
 Intersectmixed <- intersect(rubcftopNList$rubcftopNList, rubcftopNList_bin$rubcftopNList_bin)
+
 paste("Anzahl gemeinsame Empfehlungen gemischt:", length(Intersectmixed))
 paste("Anzahl UBCF:", length(Intersectmixed) / nrow(rubcftopNList) * 100)
 paste("Anteil UBCF binär:", length(Intersectmixed) / nrow(rubcftopNList_bin) * 100)
@@ -547,8 +561,11 @@ Vergleiche wie sich der Anteil übereinstimmender Empfehlungen der Top-15 Liste 
 generate_SVD_topNList<- function(ksvd){
 	temp <- Recommender(training, "SVD", param=list(k= ksvd))
 	temp = predict(temp, test, n=15)
+	
   temp
 }
+
+
 ```
 
 
