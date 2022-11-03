@@ -247,7 +247,7 @@ image(MovieLenseCompact)
 nratings(MovieLenseCompact) / (dim(MovieLenseCompact)[1] * dim(MovieLenseCompact)[2]) * 100
 ```
 Durch die Datenreduktion hat nun die Sparsity Matrix eine Dimension von 400 x 700, sprich sind
-280’000 Ratingfelder vorhanden. Davon sind nur ca. 24% mit tatsächlichen ratings versehen. Dies macht verglichen zu den Ursprünglichen Sparsity Matrix eine Steigerung von 18% aus. Jedoch muss man bedenken, dass die Ursprüngliche Sparsity Matrix eine Dimension von 943 x 1664 hatte, sprich Gesamthaft 1’569’152 Ratingfelder. Beziehen wir uns nur auf die Ratingfelder, so haben wir den Datensatz um 1 - (280’000 / 1’569’152) * 100 ≈ 82% reduziert.  
+280’000 Ratingfelder vorhanden. Davon sind nur ca. 24% mit tatsächlichen Ratings versehen. Dies macht verglichen zu den Ursprünglichen Sparsity Matrix eine Steigerung von 18% aus. Jedoch muss man bedenken, dass die Ursprüngliche Sparsity Matrix eine Dimension von 943 x 1664 hatte, sprich Gesamthaft 1’569’152 Ratingfelder. Beziehen wir uns nur auf die Ratingfelder, so haben wir den Datensatz um 1 - (280’000 / 1’569’152) * 100 ≈ 82% reduziert.  
 
 ##2. Mittlere Kundenratings pro Film vor und nach Datenreduktion,
 ```{r}
@@ -258,7 +258,7 @@ MovieLenseCut %>%
   geom_histogram(color = "black", fill = "lightblue", binwidth = 0.5) +
     labs(x = "Ratings", 
        y = "Anzahl", 
-       title = "Mittlere Kundenratings verteilung",
+       title = "Mittlere Kundenratings Verteilung",
        subtitle = "MovieLenseData")
 ```
 
@@ -272,6 +272,8 @@ MovieLenseCut %>%
 nratings(MovieLenseCompact) / nratings(MovieLense) * 100
 
 ```
+
+67.8% überschneidungen gibt es mit der gefilterten User-Item Matrix zur Ursprünglich, dass ist ein hoher Wert, aber bedankt man, dass wir die User und Filme nach den meisten Ratings gefiltert haben. 
 
 # Analyse Ähnlichkeitsmatrix
 
@@ -362,7 +364,7 @@ DfforSimMatrix <- getRatingMatrix(MovieLenseCompact)
 ```{r}
 cosin_sim <- t(DfforSimMatrix) / sqrt(rowSums(t(DfforSimMatrix) * t(DfforSimMatrix)))
 cosin_sim_mat <- cosin_sim %*% t(cosin_sim)
-#cosin_sim_mat
+cosin_sim_mat
 ```
 
 ### Jaccard Similarity
@@ -548,7 +550,7 @@ paste("Anteil UBCF binär:", length(Intersectmixed) / nrow(rubcftopNList_bin) * 
 ```
 
 
-# Analyse Top-N Listen -IBCF vs SVD
+# Analyse Top-N Listen - IBCF vs SVD
 
 ## Aufgabe 7: Vergleiche
 
@@ -609,6 +611,8 @@ paste("Anteil SVD50:", length(IntersectIBCFSVD50) / nrow(rsvd50topNList) * 100)
 ```
 
 # Implementierung Top-N Metriken
+Aufgabe 8 (DIY) 
+
 
 # Wahl des optimalen Recommenders
 
@@ -661,3 +665,4 @@ Hinweis: Verwende für den Top-Movie Recommender die Filme mit den höchsten Dur
 
 
 # Implementierung Top-N Monitor
+Aufgabe 10 (DIY)
