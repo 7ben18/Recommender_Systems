@@ -309,7 +309,7 @@ rownames(ribcf_sim_df_) <- NULL
 
 # Visualiseren mittels Histogramm
 ribcf_sim_df_ %>%
-  rename(Anzahlz = 2) %>% 
+  rename(Anzahl = 2) %>% 
   ggplot(aes(x = Anzahl)) + 
   geom_histogram(binwidth =  0.1) +
   labs(title = "Verteilung der Ähnlichkeitsvergleiche",
@@ -560,12 +560,9 @@ Vergleiche wie sich der Anteil übereinstimmender Empfehlungen der Top-15 Liste 
 ```{r}
 generate_SVD_topNList<- function(ksvd){
 	temp <- Recommender(training, "SVD", param=list(k= ksvd))
-	temp = predict(temp, test, n=15)
-	
+	temp <- predict(temp, test, n=15)
   temp
 }
-
-
 ```
 
 
