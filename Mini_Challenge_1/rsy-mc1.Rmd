@@ -349,46 +349,23 @@ analysiere die Resultate für 100 zufällig gewählte Filme.
 die Cosine Similarity und (b) für binäre Ratings effizient die Jaccard
 Similarity zu berechnen,
 
+```{r}
+number_user <- 2
+number_item <- 10
+```
+
 
 ### 1a) Cosine Similarity 
-```{r}
-random_100_matrix_4 <- getRatingMatrix(MovieLense[1:5, 1:5]) 
-
-random_100_matrix_4_bin <- as(binarize(MovieLense[1:3, 1:3], minRating=4), "matrix")
-```
 
 ```{r}
-random_100_matrix_4_bin
-```
-
-```{r}
-matrix_corssprod <- tcrossprod(random_100_matrix_4_bin)
-im <- which(matrix_corssprod > 0, arr.ind=TRUE)
-b <- rowSums(random_100_matrix_4_bin)
-Aim <- matrix_corssprod[im]
-
-J = sparseMatrix(
-          i = im[,1],
-          j = im[,2],
-          x = Aim / (b[im[,1]] + b[im[,2]] - Aim),
-          dims = dim(matrix_corssprod)
-    )
-
-J <- data.matrix(J)
-
-
-```
-
-```{r}
-# create function
-```
-
-
-
-
-```{r}
-get_cossim_4 <- function(sclied_matrix){
-  temp_sim <- sclied_matrix / sqrt(rowSums(sclied_matrix ** 2))
+get_cossim_4 <- function(RatingMatrix, n_user, n_item){
+ 
+  
+  sliced_matrix <- getRatingMatrix(RatingMatrix[1:n_user, 1:n_item]) 
+  
+  sliced_matrix_t <- t(sliced_matrix)
+  
+  temp_sim <- sliced_matrix_t / sqrt(rowSums(sliced_matrix_t ** 2))
 
   cossim_matrix <- temp_sim %*% t(temp_sim)
 
@@ -397,28 +374,64 @@ get_cossim_4 <- function(sclied_matrix){
 ```
 
 ```{r}
-get_cossim_4(random_100_matrix_4)
+result_cossim_4 <- get_cossim_4(MovieLense, number_user, number_item)
+result_cossim_4
 ```
 
 ### 1b) Jaccard Similarity
 
-
-
 ```{r}
-binarize(random_100_matrix_4, minRating = 4)
+get_jaccardsim_4 <- function(RatingMatrix, n_user, n_item){
+  
+  sliced_matrix_bin <- as(binarize(RatingMatrix[1:n_user, 1:n_item], minRating=4), "matrix")
+  
+  sliced_matrix_bin_t <- t(sliced_matrix_bin)
+  
+  matrix_corssprod <- tcrossprod(sliced_matrix_bin_t)
+  
+  im <- which(matrix_corssprod > 0, arr.ind=TRUE)
+  b <- rowSums(sliced_matrix_bin_t)
+  Aim <- matrix_corssprod[im]
+  
+  J = sparseMatrix(
+            i = im[,1],
+            j = im[,2],
+            x = Aim / (b[im[,1]] + b[im[,2]] - Aim),
+            dims = dim(matrix_corssprod)
+      )
+  
+  J <- data.matrix(J)
+  
+  J
+}
+
 ```
 
-
-
 ```{r}
-random_100_matrix_4
+get_jaccardsim_4(MovieLense, number_user, number_item)
 ```
-
 
 
 ## 2. Vergleiche deine Implementierung der Cosine-basierten
 Ähnlichkeitsmatrix für ordinale Ratings mit der via recommenderlab
 und einem anderen R-Paket erzeugten Ähnlichkeitsmatrix,
+
+### Vergleich Cosine Similiarty mit Recommenderlab
+
+```{r}
+recom_simcosin_4 <- similarity(normalize(MovieLense[1:number_user, 1:number_item]))
+
+recom_simcosin_4
+```
+
+```{r}
+result_cossim_4_scaled <- 1 / 2 * (result_cossim_4 + 1)
+
+result_cossim_4_scaled
+```
+
+
+### Vergleich Cosine Similiarity mit anderem R-Paket
 
 ```{r}
 library(lsa)
@@ -429,11 +442,6 @@ rec_simMat
 # simMat_lsa <- cosine(DfforSimMatrix, y = NULL)
 ```
 
-
-Platzhalter für Rescaling der Matrizen
-```{r}
-
-```
 
 ##3. Vergleiche deine mittels Cosine Similarity erzeugten Ähnlichkeitsmatrix für ordinale Ratings mit der Jaccard-basierten
 Ähnlichkeitsmatrix für binäre Ratings.
