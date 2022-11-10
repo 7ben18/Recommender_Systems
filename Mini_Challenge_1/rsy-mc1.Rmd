@@ -749,8 +749,8 @@ ribcftopNList_10_df_transposed_tibble_pivot_genre
 
 ```{r}
 # pivot longer dataframe
-ribcftopNList_10_df_transposed_tibble_pivot_genre %>% group_by(testUsers) %>% 
-  summarise_all(funs(sum()))
+ribcftopNList_10_df_transposed_tibble_pivot_genre %>% group_by(testUsers) %>%
+  summarise(across(everything(), ~ sum(., is.na(.), 0)))
 ```
 
 
