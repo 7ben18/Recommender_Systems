@@ -43,13 +43,13 @@ MovieLenseEDA <- as(MovieLense, "data.frame")
 ```
 
 
-# Explorative Datenanalyse
+# 1 Explorative Datenanalyse
 Aufgabe 1: Untersuche den vollständigen MovieLense Datensatz 
 (d.h. vor Datenreduktion!) und beantworte folgende Fragen
 
 ## 1. Welches sind die am häufigsten geschauten Genres/Filme?
 
-### Filme
+### 1.1 Welches sind die am haeufigsten geschauten Filme?
 ```{r}
 MovieLenseEDA %>% 
   group_by(item) %>% 
@@ -57,7 +57,7 @@ MovieLenseEDA %>%
   arrange(desc(Anzahl)) 
 ```
 
-### Genre
+### 1.2 Welches sind die am haeufigsten geschauten Genre?
 ```{r}
 # Full Join mit df_movies_rating und MovieLenseMeta
 MovieLenseEDA_Joined <- full_join(MovieLenseEDA, MovieLenseMeta, 
@@ -78,7 +78,7 @@ MovieLenseEDA_Joined <- full_join(MovieLenseEDA, MovieLenseMeta,
           by = c("item" = "title"))
 ```
 
-### Verteilung der Kundenratings Gesamthaft
+### 2.1 Verteilung der Kundenratings Gesamthaft
 ```{r}
 MovieLenseEDA_Joined$rating <- as.factor(MovieLenseEDA_Joined$rating)
 
@@ -94,7 +94,7 @@ MovieLenseEDA_Joined %>% group_by(rating) %>%
        subtitle = "MovieLenseData")
 ```
 
-### Verteilung der Kundenratings nach Genre
+### 2.2 Verteilung der Kundenratings nach Genre
 ```{r}
 MovieLenseEDA_Joined$rating <- as.integer(MovieLenseEDA_Joined$rating)
 
@@ -177,10 +177,11 @@ image(MovieLense[1:50,1:50],
 Jede Zeile von MovieLense entspricht einem Benutzer und jede Spalte einem Film. Gesamthaft gibt es 943 x 1664 = 1’569’152 Kombinationen zwischen User und Film. Allerdings hat nicht jeder Nutzer jeden Film gesehen, aus diesem Grund ist es wichtig die Sparisy Matrix zu betrachten. In MovieLense Matrix fehlen ca. 94% der Kombinationen. Ca. 6 % ist die Sparse Matrix gefuellt mit Werten. 
 
 
-# Datenreduktion
-## Aufgabe 2: Reduziere den MovieLense Datensatz auf rund 400 Kunden und 700 Filme, indem du Filme und Kunden mit sehr wenigen Ratings entfernst.
+# 2 Datenreduktion
+Aufgabe 2: Reduziere den MovieLense Datensatz auf rund 400 Kunden und 700 Filme, indem du Filme und Kunden mit sehr wenigen Ratings entfernst.
 
-### DataFrame neu einlesen
+## 2.1 Vorbereitung
+### 2.1.1 DataFrame neu einlesen
 ```{r}
 MovieLenseToCut <- as(MovieLense, "data.frame")
 ```
@@ -190,7 +191,7 @@ MovieLenseToCut
 ```
 
 
-### Auswahl der 400 Kunden
+### 2.1.2 Auswahl der 400 Kunden
 ```{r}
 MovieLense400User <- MovieLenseToCut %>% 
   group_by(user) %>% 
@@ -200,7 +201,7 @@ MovieLense400User <- MovieLenseToCut %>%
 head(MovieLense400User)
 ```
 
-### Auswahl der 700 Movies
+### 2.1.3 Auswahl der 700 Movies
 ```{r}
 MovieLense700Items <- MovieLenseToCut %>% 
   group_by(item) %>% 
@@ -210,7 +211,7 @@ MovieLense700Items <- MovieLenseToCut %>%
 head(MovieLense700Items)
 ```
 
-### DataFrame schneiden
+### 2.1.4 DataFrame schneiden
 ```{r}
 MovieLenseCut <- MovieLenseToCut %>% 
   filter(user %in% c(MovieLense400User$user))
@@ -225,9 +226,9 @@ MovieLenseCut
 
 Untersuche und dokumentiere die Eigenschaften des reduzierten Datensatzes und beschreibe den Effekt der Datenreduktion, d.h.
 
-## 1. Anzahl Filme und Kunden sowie Sparsity vor und nach Datenreduktion,
+## 2.2 Anzahl Filme und Kunden sowie Sparsity vor und nach Datenreduktion,
 
-### Vor der Datenreduktion
+### 2.2.1 Vor der Datenreduktion
 ```{r}
 image(MovieLense)
 ```
@@ -236,20 +237,20 @@ image(MovieLense)
 nratings(MovieLense) / (dim(MovieLense)[1] * dim(MovieLense)[2]) * 100
 ```
 
-### Nach Datenreduktion
+### 2.2.2 Nach Datenreduktion
 ```{r}
 MovieLenseCompact <- as(MovieLenseCut, "realRatingMatrix")
 image(MovieLenseCompact)
 ```
 
-### Vergleich der Sparsity
+### 2.2.3Vergleich der Sparsity
 ```{r}
 nratings(MovieLenseCompact) / (dim(MovieLenseCompact)[1] * dim(MovieLenseCompact)[2]) * 100
 ```
 Durch die Datenreduktion hat nun die Sparsity Matrix eine Dimension von 400 x 700, sprich sind
 280’000 Ratingfelder vorhanden. Davon sind nur ca. 24% mit tatsächlichen Ratings versehen. Dies macht verglichen zu den Ursprünglichen Sparsity Matrix eine Steigerung von 18% aus. Jedoch muss man bedenken, dass die Ursprüngliche Sparsity Matrix eine Dimension von 943 x 1664 hatte, sprich Gesamthaft 1’569’152 Ratingfelder. Beziehen wir uns nur auf die Ratingfelder, so haben wir den Datensatz um 1 - (280’000 / 1’569’152) * 100 ≈ 82% reduziert.  
 
-##2. Mittlere Kundenratings pro Film vor und nach Datenreduktion,
+## 2.3 Mittlere Kundenratings pro Film vor und nach Datenreduktion,
 ```{r}
 MovieLenseCut %>% 
   group_by(item) %>% 
@@ -262,7 +263,7 @@ MovieLenseCut %>%
        subtitle = "MovieLenseData")
 ```
 
-## 3. Für Gruppen: Quantifiziere “Intersection over Union” der Ratings der unterschiedlich reduzierten Datensätze.
+## 2.4 Für Gruppen: Quantifiziere “Intersection over Union” der Ratings der unterschiedlich reduzierten Datensätze.
 
 ```{r}
 #MovieLenseCut - UrsprungsdataFrame
@@ -275,11 +276,10 @@ nratings(MovieLenseCompact) / nratings(MovieLense) * 100
 
 67.8% überschneidungen gibt es mit der gefilterten User-Item Matrix zur Ursprünglich, dass ist ein hoher Wert, aber bedankt man, dass wir die User und Filme nach den meisten Ratings gefiltert haben. 
 
-# Analyse Ähnlichkeitsmatrix
+# 3 Analyse Ähnlichkeitsmatrix
+Aufgabe 3: Erzeuge einen IBCF Recommender und analysiere die Ähnlichkeitsmatrix des trainierten Modelles für den reduzierten Datensatz.
 
-## Aufgabe 3: Erzeuge einen IBCF Recommender und analysiere die Ähnlichkeitsmatrix des trainierten Modelles für den reduzierten Datensatz.
-
-## 1. Zerlege den reduzierten MovieLense Datensatz in ein disjunktes Trainings-und Testdatenset im Verhältnis 4:1,
+## 3.1 Zerlege den reduzierten MovieLense Datensatz in ein disjunktes Trainings-und Testdatenset im Verhältnis 4:1,
 
 ```{r}
 training <- MovieLenseCompact[1:320] 
@@ -289,14 +289,14 @@ training
 test
 ```
 
-## 2. Trainiere ein IBCF Modell mit 30 Nachbarn und Cosine Similarity
+## 3.2 Trainiere ein IBCF Modell mit 30 Nachbarn und Cosine Similarity
 
 ```{r}
 ribcf <- Recommender(training, "IBCF", param=list(k= 30, method = "cosine"))
 ribcf
 ```
 
-## 3. Bestimme die Verteilung der Filme, welche bei IBCF für paarweise Ähnlichkeitsvergleiche verwendet werden,
+## 3.3 Bestimme die Verteilung der Filme, welche bei IBCF für paarweise Ähnlichkeitsvergleiche verwendet werden,
 
 ```{r}
 # get model
@@ -321,7 +321,7 @@ ribcf_sim_df_ %>%
 Im Histogramm erkennt man die Anzahl Filme die als Nachbar bei einem anderen Film 
 auftauchen.  
 
-##4. Bestimme die Filme, die am häufigsten in der Cosine-Ähnlichkeitsmatrix auftauchen und analysiere deren Vorkommen und Ratings im reduzierten Datensatz.
+## 3.4 Bestimme die Filme, die am häufigsten in der Cosine-Ähnlichkeitsmatrix auftauchen und analysiere deren Vorkommen und Ratings im reduzierten Datensatz.
 
 ```{r}
 ribcf_sim_df_
@@ -340,28 +340,27 @@ ribcf_sim_df_ %>%
 
 Top 10 Filme die am haeufigesten in der Nachbarschaft andere Filme auftauchen.
 
-# Implementierung Ähnlichkeitsmatrix
+# 4 Implementierung Ähnlichkeitsmatrix
 Aufgabe 4 (DIY): Implementiere eine Funktion zur effizienten
 Berechnung von sparsen Ähnlichkeitsmatrizen für IBCF RS und
 analysiere die Resultate für 100 zufällig gewählte Filme.
 
-## 1. Implementiere eine Funktion, um (a) für ordinale Ratings effizient
+## 4.1 Implementiere eine Funktion, um (a) für ordinale Ratings effizient
 die Cosine Similarity und (b) für binäre Ratings effizient die Jaccard
 Similarity zu berechnen,
 
 ```{r}
-number_user <- 2
-number_item <- 10
+number_user <- 100
+number_item <- 100
 ```
 
 
-### 1a) Cosine Similarity 
+### 4.1.1 Cosine Similarity 
 
 ```{r}
 get_cossim_4 <- function(RatingMatrix, n_user, n_item){
  
-  
-  sliced_matrix <- getRatingMatrix(RatingMatrix[1:n_user, 1:n_item]) 
+  sliced_matrix <- getRatingMatrix(RatingMatrix[1:n_user, 1:n_item])
   
   sliced_matrix_t <- t(sliced_matrix)
   
@@ -375,10 +374,10 @@ get_cossim_4 <- function(RatingMatrix, n_user, n_item){
 
 ```{r}
 result_cossim_4 <- get_cossim_4(MovieLense, number_user, number_item)
-result_cossim_4
+result_cossim_4[1:5,1:5]
 ```
 
-### 1b) Jaccard Similarity
+### 4.1.2 Jaccard Similarity
 
 ```{r}
 get_jaccardsim_4 <- function(RatingMatrix, n_user, n_item){
@@ -412,26 +411,26 @@ get_jaccardsim_4(MovieLense, number_user, number_item)
 ```
 
 
-## 2. Vergleiche deine Implementierung der Cosine-basierten
+## 4.2 Vergleiche deine Implementierung der Cosine-basierten
 Ähnlichkeitsmatrix für ordinale Ratings mit der via recommenderlab
 und einem anderen R-Paket erzeugten Ähnlichkeitsmatrix,
 
-### Vergleich Cosine Similiarty mit Recommenderlab
+### 4.2.1 Vergleich Cosine Similiarty mit Recommenderlab
 
 ```{r}
-recom_simcosin_4 <- similarity(normalize(MovieLense[1:number_user, 1:number_item]))
+recom_simcosin_4 <- as.matrix(similarity(normalize(MovieLense[1:number_user, 1:number_item]), which = "items", method = "cosine"))
 
-recom_simcosin_4
+recom_simcosin_4[1:4,1:4]
 ```
 
 ```{r}
 result_cossim_4_scaled <- 1 / 2 * (result_cossim_4 + 1)
 
-result_cossim_4_scaled
+result_cossim_4_scaled[1:4,1:4]
 ```
 
 
-### Vergleich Cosine Similiarity mit anderem R-Paket
+### 4.2.2 Vergleich Cosine Similiarity mit anderem R-Paket
 
 ```{r}
 library(lsa)
@@ -443,7 +442,7 @@ rec_simMat
 ```
 
 
-##3. Vergleiche deine mittels Cosine Similarity erzeugten Ähnlichkeitsmatrix für ordinale Ratings mit der Jaccard-basierten
+## 4.3 Vergleiche deine mittels Cosine Similarity erzeugten Ähnlichkeitsmatrix für ordinale Ratings mit der Jaccard-basierten
 Ähnlichkeitsmatrix für binäre Ratings.
 
 ```{r}
@@ -451,14 +450,14 @@ rec_simMat
 ```
 
 
-# Analyse Top-N Listen - IBCF vs UBCF
+# 5 Analyse Top-N Listen - IBCF vs UBCF
 Aufgabe 5: Vergleiche und diskutiere Top-N Empfehlungen von IBCF
 und UBCF Modellen mit 30 Nachbarn und Cosine Similarity für den
 reduzierten Datensatz.
 
-## 1. Berechne Top-15 Empfehlungen für Testkunden mit IBCF und UBCF 
+## 5.1 Berechne Top-15 Empfehlungen für Testkunden mit IBCF und UBCF 
 
-### ribcf & rubcf Modell trainieren
+### 5.1.1 ribcf & rubcf Modell trainieren
 ```{r}
 ribcf <- Recommender(training, "IBCF", param=list(k= 30, method = "cosine"))
 ribcf
@@ -467,16 +466,21 @@ rubcf
 ```
 
 
-### Model Predicitions erstellen
+### 5.1.2 Model Predicitions erstellen
 ```{r}
-ribcftopNList = predict(ribcf, test, n=15)
+ribcftopNList <- predict(ribcf, test, n=15)
 ribcftopNList
 
-rubcftopNList = predict(rubcf, test, n=15)
+rubcftopNList <- predict(rubcf, test, n=15)
 rubcftopNList
 ```
 
-### 2. Vergleiche die Top-15 Empfehlungen und deren Verteilung und
+```{r}
+as(ribcftopNList, "list")
+```
+
+
+## 5.2 Vergleiche die Top-15 Empfehlungen und deren Verteilung und
 diskutiere Gemeinsamkeiten und Unterschiede zwischen IBCF und
 UBCF für alle Testkunden.
 
@@ -501,7 +505,7 @@ rubcftopNList <- cftopNList_to_df(rubcftopNList, "rubcftopNList")
 rubcftopNList
 ```
 
-### Verteilungen visualisieren
+### 5.2.1 Verteilungen visualisieren
 ```{r}
 ribcftopNList %>% 
   ggplot(aes(x = Anzahl)) + 
@@ -521,11 +525,11 @@ Die erwähnte Behauptung “Recommender Systeme machen für alle Nutzer die glei
 Weiterer Text folgt.
 
 
-# Analyse Top-N Listen - Ratings
+# 6 Analyse Top-N Listen - Ratings
 
 Aufgabe 6: Untersuche den Einfluss von Ratings (ordinale vs binäre Ratings) und Modelltyp (IBCF vs UBCF) auf Top-N Empfehlungen für den reduzierten Datensatz. Vergleiche den Anteil übereinstimmender Empfehlungen der Top-15 Liste für
 
-## 1. IBCF vs UBCF, beide mit ordinalem Rating und Cosine Similarity für alle Testkunden,
+## 6.1 IBCF vs UBCF, beide mit ordinalem Rating und Cosine Similarity für alle Testkunden,
 
 ```{r}
 paste("Anzahl IBCF:", nrow(ribcftopNList))
@@ -539,7 +543,7 @@ paste("Anteil UBCF:", length(IntersectordRatCosine) / nrow(rubcftopNList) * 100)
 ```
 
 
-## 2.IBCF vs UBCF, beide mit binärem Rating und Jaccard Similarity für alle Testkunden,
+## 6.2 IBCF vs UBCF, beide mit binärem Rating und Jaccard Similarity für alle Testkunden,
 
 ```{r}
 training_bin <- binarize(training, minRating = 4)
@@ -582,7 +586,7 @@ paste("Anteil UBCF binär:", length(IntersectbinRatJaccard) / nrow(rubcftopNList
 Zu diskutieren: Wieso sind die Anzahl Übereinstimmungen am höchsten sind, wenn minRating 5 ist.
 
 
-## 3.UBCF mit ordinalem (Cosine Similarity) vs UBCF mit binärem Rating (Jaccard Similarity) für alle Testkunden.
+## 6.3 UBCF mit ordinalem (Cosine Similarity) vs UBCF mit binärem Rating (Jaccard Similarity) für alle Testkunden.
 
 ```{r}
 paste("Anzahl UBCF:", nrow(rubcftopNList))
@@ -600,10 +604,8 @@ paste("Anteil UBCF binär:", length(Intersectmixed) / nrow(rubcftopNList_bin) * 
 ```
 
 
-# Analyse Top-N Listen - IBCF vs SVD
-
-## Aufgabe 7: Vergleiche
-
+# 7 Analyse Top-N Listen - IBCF vs SVD
+Aufgabe 7: Vergleiche
 Memory-based IBCF und Modell-based SVD Recommenders bezüglich Überschneidung ihrer Top-N Empfehlungen für die User-Item Matrix des reduzierten Datensatzes (Basis: reduzierter Datensatz, IBCF mit 30 Nachbarn und Cosine Similarity).
 
 Vergleiche wie sich der Anteil übereinstimmender Empfehlungen der Top-15 Liste für IBCF vs verschiedene SVD Modelle verändert, wenn die Anzahl der Singulärwerte für SVD von 10 auf 20, 30, 40, 50 verändert wird.
@@ -617,7 +619,6 @@ generate_SVD_topNList<- function(ksvd){
 }
 ```
 
-
 ```{r}
 rsvd10topNList <- generate_SVD_topNList(10)
 rsvd20topNList <- generate_SVD_topNList(20)
@@ -626,8 +627,6 @@ rsvd40topNList <- generate_SVD_topNList(40)
 rsvd50topNList <- generate_SVD_topNList(50)
 ```
 
-
-
 ```{r}
 rsvd10topNList <- cftopNList_to_df(rsvd10topNList, "rsvd10topNList")
 rsvd20topNList <- cftopNList_to_df(rsvd20topNList, "rsvd20topNList")
@@ -635,8 +634,6 @@ rsvd30topNList <- cftopNList_to_df(rsvd30topNList, "rsvd30topNList")
 rsvd40topNList <- cftopNList_to_df(rsvd40topNList, "rsvd40topNList")
 rsvd50topNList <- cftopNList_to_df(rsvd50topNList, "rsvd50topNList")
 ```
-
-
 
 ```{r}
 IntersectIBCFSVD10 <- intersect(ribcftopNList$ribcftopNList, rsvd10topNList$rsvd10topNList)
@@ -660,15 +657,37 @@ paste("Anzahl gemeinsame Empfehlungen SVD50:", length(IntersectIBCFSVD50))
 paste("Anteil SVD50:", length(IntersectIBCFSVD50) / nrow(rsvd50topNList) * 100)
 ```
 
-# Implementierung Top-N Metriken
+# 8 Implementierung Top-N Metriken
 Aufgabe 8 (DIY) 
+## 8.1 CoverageN 
+```{r}
+ribcf_8 <- Recommender(MovieLense, "IBCF", param=list(k= 30, method = "cosine"))
+ribcf_8
+
+ribcftopNList_8 <- predict(ribcf_8, MovieLense, n=15)
+ribcftopNList_8
+
+list_items_8 <- unique(unlist(as(ribcftopNList_8, "list"), use.names = FALSE))
+len_items_8 <- length(list_items_8)
+
+len_all_items_8 <- dim(MovieLense)[2]
+len_all_items_8
+
+coverageN <- len_items_8 / len_all_items_8
+coverageN
+```
+41.7 % der vorhandenen Filme werden empfohlen.
+
+## 8.2 NoveltyN
+```{r}
+nratings(MovieLense) / len_all_items_8
+```
 
 
-# Wahl des optimalen Recommenders
 
-## Aufgabe 9
-
-### 1. Verwende für die Evaluierung 10-fache Kreuzvalidierung
+# 9 Wahl des optimalen Recommenders
+Aufgabe 9
+## 9.1 Verwende für die Evaluierung 10-fache Kreuzvalidierung
 ```{r}
 set.seed(1234)
 scheme <- evaluationScheme(MovieLenseCompact, method="cross-validation", k = 10, given=3, goodRating=5)
@@ -676,7 +695,7 @@ scheme
 ```
 
 
-### 2. Begründe deine Wahl von Metriken und Modell
+## 9.2 Begründe deine Wahl von Metriken und Modell
 
 ```{r}
 algorithms <- list("hybrid" = list(name = "HYBRID", param =list(recommenders = list(SVD = list(name="SVD", param=list(k = 40)),
@@ -694,11 +713,11 @@ results <- evaluate(scheme, algorithms, type = "topNList", n=c(10, 15, 20, 25, 3
 plot(results, annotate=c(1,3), legend="topleft")
 ```
 
-### 3. Analysiere das beste Modell für Top-N Recommendations mit N = 10, 15, 20, 25 und 30,
+## 9.3 Analysiere das beste Modell für Top-N Recommendations mit N = 10, 15, 20, 25 und 30,
 vieles blabaalabaaassss
 
 
-### 4. Optimiere dein bestes Modell hinsichtlich Hyperparametern
+## 9.4 Optimiere dein bestes Modell hinsichtlich Hyperparametern
 
 ```{r}
 algorithmsimprovedrecom <- list("popular items center" = list(name="POPULAR", param=NULL),
@@ -710,9 +729,40 @@ resultsimprovedrecom <- evaluate(scheme, algorithmsimprovedrecom, type = "topNLi
 plot(resultsimprovedrecom, annotate=c(1,3), legend="topleft")
 ```
 
-
 Hinweis: Verwende für den Top-Movie Recommender die Filme mit den höchsten Durchschnittsratings.
 
+# 10 Implementierung Top-N Monitor
+Aufgabe 10 (DIY): Untersuche die relative Übereinstimmung zwischen
+Top-N Empfehlungen und präferierten Filmen für 4 unterschiedliche
+Modelle (z.B. IBCF und UBCF mit unterschiedlichen Ähnlichkeitsmetriken / Nachbarschaften sowie SVD mit unterschiedlicher
+Dimensionalitätsreduktion).
 
-# Implementierung Top-N Monitor
-Aufgabe 10 (DIY)
+## 10.1 Fixiere 20 zufällig gewählte Testkunden für alle Modellvergleiche,
+```{r}
+
+```
+
+## 10.2 Bestimme den Anteil der Top-N Empfehlung nach Genres pro Kunde,
+```{r}
+
+```
+
+
+## 10.3 Bestimme pro Kunde den Anteil nach Genres seiner Top-Filme
+(=Filme mit besten Bewertungen),
+```{r}
+
+```
+
+
+## 10.4 Vergleiche pro Kunde Top-Empfehlungen vs Top-Filme nach Genres,
+```{r}
+
+```
+
+
+## 10.5 Definiere eine Qualitätsmetrik für Top-N Listen und teste sie.
+```{r}
+
+```
+
