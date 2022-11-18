@@ -86,13 +86,51 @@ ggplot(aes(x = Anzahl, y = profile)) +
 
 ```{r}
 
+user_rating_df <- as(MovieLense, "data.frame")
+
+user_rating_genre_df <- left_join(user_rating_df, Movie_Genre_df, by = c("item" = "title"))
+
+user_rating_genre_df
+
 ```
+
+```{r}
+multiplied_rating_genre <- cbind(user_rating_genre_df$user, sapply(user_rating_genre_df[4:22], "*", user_rating_genre_df$rating))
+```
+
+
+```{r}
+multiplied_rating_genre_df <- as.data.frame(multiplied_rating_genre) %>% rename(user = V1)
+
+multiplied_rating_genre_df
+```
+
+
+```{r}
+# change every column except first one to int
+for (colname in colnames(multiplied_rating_genre_df)[-1]) {
+  multiplied_rating_genre_df[, colname] <- as.integer(multiplied_rating_genre_df[, colname])
+}
+
+# replace all 0 with NA
+multiplied_rating_genre_df[multiplied_rating_genre_df == 0] <- NA
+
+# groupby user and calculate mean of every column 
+user_genre_profile_df <- multiplied_rating_genre_df %>% group_by(user) %>% summarise_all(mean, na.rm = TRUE) %>% arrange(user) %>% column_to_rownames(., var = "user")
+
+user_genre_profile_df
+
+```
+
+
 
 ## 1.8 Dimension der User-Genre-Profil Matrix prüfen und ausgeben.
 
 ```{r}
-
+dim(user_genre_profile_df)
 ```
+Wie zu erwarten haben wir weiterhin 943 User und 19 Genre. 
+
 
 ## 1.9 Anzahl unterschiedlicher Nutzerprofile bestimmen, wenn Stärke der
 
@@ -109,7 +147,16 @@ Genre-Kombination (a) vollständig (b) binär berücksichtigt wird.
 berechnen.
 
 ```{r}
+rr_user_genre_matrix <- as(user_genre_profile_df, "realRatingMatrix")
+rr_Movie_genre_matrix <- as(Movie_Genre_df, "realRatingMatrix")
 
+rr_user_genre_matrix
+
+```
+
+
+```{r}
+user_genre_profile_df
 ```
 
 ## 2.2 Dimension der Matrix der Cosinus-Ähnlichkeiten von Nutzern und
