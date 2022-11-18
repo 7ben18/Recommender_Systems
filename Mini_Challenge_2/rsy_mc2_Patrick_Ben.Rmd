@@ -1,0 +1,212 @@
+---
+title: "RSY-MC2"
+author: "Patrick, Ben"
+output: 
+  html_notebook:
+    toc: True
+    toc_float: True
+---
+
+# Settings
+```{r}
+library(tidyverse)
+library(recommenderlab)
+```
+
+
+# 1. Erzeugung von Film- & Nutzerprofilen
+
+## 1.1 MovieLense Daten einlesen
+
+```{r}
+data(MovieLense)
+```
+
+## 1.2 Binäre User-Liked-Items Matrix für alle Nutzer erzeugen.
+
+```{r}
+as(MovieLense[1:4, 1:4], "matrix")
+
+user_liked_items_binaer <- binarize(MovieLense, minRating = 4)
+
+as(user_liked_items_binaer[1:4, 1:4], "matrix")
+```
+
+## 1.3 Dimension der User-Liked-Items Matrix prüfen und ausgeben.
+
+```{r}
+dim(user_liked_items_binaer)
+```
+Die User-Liked-Items Matrix hat eine Dimension von 943 User und 1664 Items (Movies). 
+
+## 1.4 Movie-Genre Matrix für alle Filme erzeugen.
+
+```{r}
+Movie_Genre_df <- MovieLenseMeta %>% select(-c(year, url))
+
+Movie_genre_matrix <- as(Movie_Genre_df, "matrix")
+
+Movie_genre_matrix[1:5, 1:6]
+```
+
+## 1.5 Dimension der Movie-Genre Matrix prüfen und ausgeben.
+
+```{r}
+dim(Movie_genre_matrix)
+```
+Die Movie_genre_Matrix hat eine Dimension von 1664 User und 20 Genre. 
+
+## 1.6 Anzahl unterschiedlicher Filmprofile bestimmen und visualisieren.
+
+```{r}
+Movie_genre_matrix_renamed <- Movie_genre_matrix
+
+colnames <- colnames(Movie_genre_matrix)[-1]
+
+for (colname in colnames) {
+  Movie_genre_matrix_renamed[, colname] <- ifelse(Movie_genre_matrix[, colname] == 1, colname, NA)
+}
+
+Movie_genre_renamed_df <- as.data.frame(Movie_genre_matrix_renamed)
+
+rownames(Movie_genre_renamed_df) <- Movie_genre_renamed_df[, 1]
+
+Movie_genre_renamed_df <- Movie_genre_renamed_df %>% select(-c(title))
+
+Movie_genre_concat_df <- Movie_genre_renamed_df %>% unite("profile", sep = "-", na.rm = TRUE, remove = TRUE)
+
+Movie_genre_concat_df 
+
+Movie_genre_concat_df %>% group_by(profile) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl)) %>% head(30) %>% arrange(profile) %>% 
+ggplot(aes(x = Anzahl, y = profile)) + 
+  geom_bar(stat = "identity") 
+```
+
+## 1.7 Nutzerprofile im Genre-Vektorraum erzeugen.
+
+```{r}
+
+```
+
+## 1.8 Dimension der User-Genre-Profil Matrix prüfen und ausgeben.
+
+```{r}
+
+```
+
+## 1.9 Anzahl unterschiedlicher Nutzerprofile bestimmen, wenn Stärke der
+
+Genre-Kombination (a) vollständig (b) binär berücksichtigt wird.
+
+```{r}
+
+```
+
+# 2. Ähnlichkeit von Nutzern und Filmen
+
+## 2.1 Cosinus-Ähnlichkeit zwischen User-Genre- und Movie-Genre-Matrix
+
+berechnen.
+
+```{r}
+
+```
+
+## 2.2 Dimension der Matrix der Cosinus-Ähnlichkeiten von Nutzern und
+
+Filmen prüfen uns ausgeben.
+
+```{r}
+
+```
+
+## 2.3 5-Zahlen Statistik für Matrix der Cosinus-Ähnlichkeiten prüfen uns
+
+ausgeben.
+
+```{r}
+
+```
+
+## 2.4 Cosinus-Ähnlichkeiten von Nutzern und Filmen mit Dichteplot
+
+visualisieren.
+
+```{r}
+
+```
+
+## 2.5 Cosinus-Ähnlichkeiten von Nutzern und Filmen mit Dichteplot für
+
+Nutzer "241", "414", "477", "526", "640" und "710" visualisieren.
+
+```{r}
+
+```
+
+# 3. Empfehlbare Filme
+
+## 3.1 Bewertete Filme maskieren, d.h. "Negativabzug" der User-Items
+
+Matrix erzeugen, um anschliessend Empfehlungen herzuleiten.
+
+```{r}
+
+```
+
+## 3.2 Zeilensumme des "Negativabzuges" der User-Items Matrix für die
+
+User "5", "25", "50" und "150" ausgeben.
+
+```{r}
+
+```
+
+## 3.3 5-Zahlen Statistik der Zeilensumme des "Negativabzuges" der UserItems Matrix bestimmen.
+
+```{r}
+
+```
+
+# 4. Top-N Empfehlungen
+
+## 4.1 Matrix für Bewertung aller Filme durch element-weise
+
+Multiplikation der Matrix der Cosinus-Ähnlichkeiten von Nutzern und Filmen und "Negativabzug" der User-Items Matrix erzeugen.
+
+```{r}
+
+```
+
+## 4.2 Dimension der Matrix für die Bewertung aller Filme prüfen.
+
+```{r}
+
+```
+
+## 4.3 Top-20 Listen extrahieren und Länge der Listen pro Nutzer prüfen.
+
+```{r}
+
+```
+
+## 4.4 Verteilung der minimalen Ähnlichkeit für Top-N Listen für N = 10, 20,
+
+50, 100 für alle Nutzer visuell vergleichen.
+
+```{r}
+
+```
+
+## 4.5 Top-20 Empfehlungen für Nutzer "5", "25", "50", "150" visualisieren.
+
+```{r}
+
+```
+
+## 4.6 Für Nutzer "133" und "555" Profil mit Top-N Empfehlungen für N =
+20, 30, 40, 50 analysieren, visualisieren und diskutieren.
+
+```{r}
+
+```
