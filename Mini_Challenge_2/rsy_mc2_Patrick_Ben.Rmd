@@ -142,42 +142,34 @@ Genre-Kombination (a) vollständig (b) binär berücksichtigt wird.
 
 # 2. Ähnlichkeit von Nutzern und Filmen
 
-## 2.1 Cosinus-Ähnlichkeit zwischen User-Genre- und Movie-Genre-Matrix
-
-berechnen.
+## 2.1 Cosinus-Ähnlichkeit zwischen User-Genre- und Movie-Genre-Matrix berechnen.
 
 ```{r}
 rr_user_genre_matrix <- as(user_genre_profile_df, "realRatingMatrix")
 rr_Movie_genre_matrix <- as(Movie_Genre_df, "realRatingMatrix")
 
-rr_user_genre_matrix
-
+as(rr_Movie_genre_matrix, "data.frame")
 ```
 
 
 ```{r}
-user_genre_profile_df
+cosine_sim_user_genre_movie_genre <- similarity(x = rr_user_genre_matrix, y = Movie_Genre_df[2:20], method = "cosine", which = "items")
+
 ```
 
-## 2.2 Dimension der Matrix der Cosinus-Ähnlichkeiten von Nutzern und
-
-Filmen prüfen uns ausgeben.
+## 2.2 Dimension der Matrix der Cosinus-Ähnlichkeiten von Nutzern und Filmen prüfen und ausgeben.
 
 ```{r}
 
 ```
 
-## 2.3 5-Zahlen Statistik für Matrix der Cosinus-Ähnlichkeiten prüfen uns
-
-ausgeben.
+## 2.3 5-Zahlen Statistik für Matrix der Cosinus-Ähnlichkeiten prüfen und ausgeben.
 
 ```{r}
 
 ```
 
-## 2.4 Cosinus-Ähnlichkeiten von Nutzern und Filmen mit Dichteplot
-
-visualisieren.
+## 2.4 Cosinus-Ähnlichkeiten von Nutzern und Filmen mit Dichteplot visualisieren.
 
 ```{r}
 
@@ -193,9 +185,7 @@ Nutzer "241", "414", "477", "526", "640" und "710" visualisieren.
 
 # 3. Empfehlbare Filme
 
-## 3.1 Bewertete Filme maskieren, d.h. "Negativabzug" der User-Items
-
-Matrix erzeugen, um anschliessend Empfehlungen herzuleiten.
+## 3.1 Bewertete Filme maskieren, d.h. "Negativabzug" der User-Items Matrix erzeugen, um anschliessend Empfehlungen herzuleiten.
 
 ```{r}
 
@@ -237,9 +227,7 @@ Multiplikation der Matrix der Cosinus-Ähnlichkeiten von Nutzern und Filmen und 
 
 ```
 
-## 4.4 Verteilung der minimalen Ähnlichkeit für Top-N Listen für N = 10, 20,
-
-50, 100 für alle Nutzer visuell vergleichen.
+## 4.4 Verteilung der minimalen Ähnlichkeit für Top-N Listen für N = 10, 20, 50, 100 für alle Nutzer visuell vergleichen.
 
 ```{r}
 
@@ -251,8 +239,7 @@ Multiplikation der Matrix der Cosinus-Ähnlichkeiten von Nutzern und Filmen und 
 
 ```
 
-## 4.6 Für Nutzer "133" und "555" Profil mit Top-N Empfehlungen für N =
-20, 30, 40, 50 analysieren, visualisieren und diskutieren.
+## 4.6 Für Nutzer "133" und "555" Profil mit Top-N Empfehlungen für N = 20, 30, 40, 50 analysieren, visualisieren und diskutieren.
 
 ```{r}
 

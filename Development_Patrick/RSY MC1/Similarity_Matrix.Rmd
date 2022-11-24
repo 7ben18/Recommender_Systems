@@ -67,4 +67,3 @@ simMat_lsa_rescaled <- 1 / 2 * (simMat_lsa + 1)
 simMat_lsa_rescaled
 simMat_rescaled
 ```
-
