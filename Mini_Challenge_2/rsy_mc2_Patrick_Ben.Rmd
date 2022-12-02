@@ -145,16 +145,71 @@ Genre-Kombination (a) vollständig (b) binär berücksichtigt wird.
 ## 2.1 Cosinus-Ähnlichkeit zwischen User-Genre- und Movie-Genre-Matrix berechnen.
 
 ```{r}
-rr_user_genre_matrix <- as(user_genre_profile_df, "realRatingMatrix")
-rr_Movie_genre_matrix <- as(Movie_Genre_df, "realRatingMatrix")
+head(user_genre_profile_df, n = 3)
 
-as(rr_Movie_genre_matrix, "data.frame")
+# remove first col in Movie_Genre_df
+movie_genre_df <- Movie_Genre_df %>% 
+  select(c(-1)) 
+
+head(movie_genre_df, n = 3)
+
+# turn both dataframe into a r matrix
+
+user_genre_matrix <- as.matrix(user_genre_profile_df)
+movie_genre_matrix <- as.matrix(movie_genre_df)
+
+# create small testing matrices
+test_user_genre_matrix <- user_genre_matrix[1:5, 1:5]
+test_user_genre_matrix
+
+test_movie_genre_matrix <- movie_genre_matrix[1:5, 1:5]
+test_movie_genre_matrix
+
+```
+
+```{r}
+
+z_test = test_user_genre_matrix %*% t(test_movie_genre_matrix)
+z_test
+
+user_genre_rowsums <- rowSums(test_user_genre_matrix, na.rm = T)
+movie_genre_rowsums <- rowSums(test_movie_genre_matrix, na.rm = T)
+
+user_genre_rowsums
+movie_genre_rowsums
+
+n_test = user_genre_rowsums %*% t(movie_genre_rowsums)
+n_test
+
+
+z_test / n_test
 ```
 
 
-```{r}
-cosine_sim_user_genre_movie_genre <- similarity(x = rr_user_genre_matrix, y = Movie_Genre_df[2:20], method = "cosine", which = "items")
 
+```{r}
+cosine_sim_func <- function(user_genre_matrix, movie_genre_matrix){
+  # matrix multiplication of user_genre_matrix @ movie_genre_matrix.T
+  # User Movie Matrix: A x B.T
+  zaehler = user_genre_matrix %*% t(movie_genre_matrix)
+  
+  # calculating the sqrt(sum(x^2, row matrix)) of each matrix and get a vector
+  user_genre_sqrt_rowsum_x2 <- rowSums(user_genre_matrix, na.rm = T)
+  movie_genre_sqrt_rowsum_x2 <- rowSums(movie_genre_matrix, na.rm = T)
+  
+  # now we create a matrix out of those two vectors
+  # User Movie Matrix: ||A|| x ||B||.T
+  nenner = user_genre_sqrt_rowsum_x2 %*% t(movie_genre_sqrt_rowsum_x2)
+  
+  # calculate Cosine similarity
+  user_movie_cosine_sim_matrix = zaehler / nenner
+  
+  user_movie_cosine_sim_matrix 
+  
+}
+
+
+cosine_sim_func(test_user_genre_matrix, test_movie_genre_matrix)
 ```
 
 ## 2.2 Dimension der Matrix der Cosinus-Ähnlichkeiten von Nutzern und Filmen prüfen und ausgeben.
