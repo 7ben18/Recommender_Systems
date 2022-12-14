@@ -280,8 +280,8 @@ movielense <- as(MovieLense,'matrix')
 
 movielense[1:5,1:4]
 
-movielense[is.na(movielense)] <- 1
 movielense[!is.na(movielense)] <- 0
+movielense[is.na(movielense)] <- 1
 
 movielense[1:5,1:4]
 ```
@@ -291,13 +291,50 @@ movielense[1:5,1:4]
 User "5", "25", "50" und "150" ausgeben.
 
 ```{r}
-user_list = c(5,25,50,150)
-user_list
+movielense[1:5, 1:4]
 ```
+
+
+```{r}
+user_list = c(5,25,50,150)
+
+# select the rows of the user_list
+movielense_user_list <- movielense[user_list,]
+movielense_user_list[1:4,2:5]
+
+dim(movielense_user_list)
+# sum the rows
+movielense_user_list_rowsum <- rowSums(movielense_user_list)
+
+movielense_user_list_rowsum
+
+```
+User 150 hat 1633 Items nicht bewertet.
+Im genrellen haben alle 4 ausgewaehlten User sehr wenig Filme bewertet. 
+User 5 hat am meisten Filme bewertet. (1664 - 1489) Bewertungen hat der User 5 gemacht. 
+
 
 ## 3.3 5-Zahlen Statistik der Zeilensumme des "Negativabzuges" der UserItems Matrix bestimmen.
 
 ```{r}
+movielense_user_list_df <- as.data.frame(movielense_user_list) %>% 
+  rownames_to_column("user_id") 
+movielense_user_list_df
+
+movielense_user_list_df_long <- movielense_user_list_df %>% 
+  pivot_longer(cols = -user_id, names_to = "movie_id", values_to = "rating")
+
+movielense_user_list_df_long
+
+movielense_user_list_df_long %>% 
+  group_by(user_id) %>% 
+  summarise(min = min(rating), 
+            quantile_1 = quantile(rating, 0.25), 
+            median = median(rating), 
+            mean = mean(rating), 
+            quantile_3 = quantile(rating, 0.75), 
+            max = max(rating)) %>% 
+  arrange(user_id)
 
 ```
 
