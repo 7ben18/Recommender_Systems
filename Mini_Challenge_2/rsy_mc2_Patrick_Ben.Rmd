@@ -78,8 +78,11 @@ Movie_genre_concat_df <- Movie_genre_renamed_df %>% unite("profile", sep = "-", 
 Movie_genre_concat_df 
 
 Movie_genre_concat_df %>% group_by(profile) %>% summarise(Anzahl = n()) %>% arrange(desc(Anzahl)) %>% head(30) %>% arrange(profile) %>% 
-ggplot(aes(x = Anzahl, y = profile)) + 
-  geom_bar(stat = "identity") 
+ggplot(aes(x = Anzahl, y = profile, fill = "red")) + 
+  ggtitle("Anzahl unterschiedlicher Filmprofile") +
+  geom_bar(stat = "identity") + 
+  theme(legend.position="none")
+
 ```
 
 ## 1.7 Nutzerprofile im Genre-Vektorraum erzeugen.
@@ -113,7 +116,7 @@ for (colname in colnames(multiplied_rating_genre_df)[-1]) {
 }
 
 # replace all 0 with NA
-multiplied_rating_genre_df[multiplied_rating_genre_df == 0] <- NA
+#multiplied_rating_genre_df[multiplied_rating_genre_df == 0] <- NA
 
 # groupby user and calculate mean of every column 
 user_genre_profile_df <- multiplied_rating_genre_df %>% group_by(user) %>% summarise_all(mean, na.rm = TRUE) %>% arrange(user) %>% column_to_rownames(., var = "user")
@@ -172,15 +175,14 @@ test_movie_genre_matrix
 z_test = test_user_genre_matrix %*% t(test_movie_genre_matrix)
 z_test
 
-user_genre_rowsums <- rowSums(test_user_genre_matrix, na.rm = T)
-movie_genre_rowsums <- rowSums(test_movie_genre_matrix, na.rm = T)
+user_genre_rowsums <- sqrt(rowSums(test_user_genre_matrix**2))
+movie_genre_rowsums <- sqrt(rowSums(test_movie_genre_matrix**2))
 
-user_genre_rowsums
+user_genre_rowsums 
 movie_genre_rowsums
 
 n_test = user_genre_rowsums %*% t(movie_genre_rowsums)
 n_test
-
 
 z_test / n_test
 ```
@@ -194,8 +196,8 @@ cosine_sim_func <- function(user_genre_matrix, movie_genre_matrix){
   zaehler = user_genre_matrix %*% t(movie_genre_matrix)
   
   # calculating the sqrt(sum(x^2, row matrix)) of each matrix and get a vector
-  user_genre_sqrt_rowsum_x2 <- rowSums(user_genre_matrix, na.rm = T)
-  movie_genre_sqrt_rowsum_x2 <- rowSums(movie_genre_matrix, na.rm = T)
+  user_genre_sqrt_rowsum_x2 <- sqrt(rowSums(user_genre_matrix ** 2))
+  movie_genre_sqrt_rowsum_x2 <- sqrt(rowSums(movie_genre_matrix ** 2))
   
   # now we create a matrix out of those two vectors
   # User Movie Matrix: ||A|| x ||B||.T
@@ -212,22 +214,33 @@ cosine_sim_func <- function(user_genre_matrix, movie_genre_matrix){
 cosine_sim_func(test_user_genre_matrix, test_movie_genre_matrix)
 ```
 
+```{r}
+cosine_sim_matrix <- cosine_sim_func(user_genre_matrix, movie_genre_matrix)
+View(cosine_sim_matrix)
+```
+
+
 ## 2.2 Dimension der Matrix der Cosinus-Ähnlichkeiten von Nutzern und Filmen prüfen und ausgeben.
 
 ```{r}
-
+dim(cosine_sim_matrix)
 ```
 
 ## 2.3 5-Zahlen Statistik für Matrix der Cosinus-Ähnlichkeiten prüfen und ausgeben.
 
 ```{r}
+cosine_sim_vector <- as.vector(cosine_sim_matrix)
 
+summary(cosine_sim_vector)
 ```
 
 ## 2.4 Cosinus-Ähnlichkeiten von Nutzern und Filmen mit Dichteplot visualisieren.
 
 ```{r}
+cosine_sim_vector_density <- density(cosine_sim_vector)
 
+plot(cosine_sim_vector_density, lwd = 2, col = "red",
+     main = "Density")
 ```
 
 ## 2.5 Cosinus-Ähnlichkeiten von Nutzern und Filmen mit Dichteplot für
@@ -235,8 +248,27 @@ cosine_sim_func(test_user_genre_matrix, test_movie_genre_matrix)
 Nutzer "241", "414", "477", "526", "640" und "710" visualisieren.
 
 ```{r}
+cosine_sim_matrix_user <- cosine_sim_matrix[c(241, 414, 477, 526, 640, 710),]
 
+df_cosine_sim_matrix <- as.data.frame(cosine_sim_matrix_user)
+
+df_cosine_sim_matrix
+
+df_cosine_sim_matrix <- df_cosine_sim_matrix %>% 
+  rownames_to_column("user_id")
+
+df_cosine_sim_matrix_long <- df_cosine_sim_matrix %>% 
+  gather(genre, cosine_sim, -user_id)
+
+df_cosine_sim_matrix_long
+
+ggplot(df_cosine_sim_matrix_long, aes(x = cosine_sim, fill = user_id)) +
+  geom_density(alpha = 0.1) +
+  labs(title = "Dichteplot von verschiedenen User",
+       x = "Cosine Similarity",
+       y = "Density")
 ```
+
 
 # 3. Empfehlbare Filme
 
