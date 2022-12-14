@@ -157,7 +157,6 @@ movie_genre_df <- Movie_Genre_df %>%
 head(movie_genre_df, n = 3)
 
 # turn both dataframe into a r matrix
-
 user_genre_matrix <- as.matrix(user_genre_profile_df)
 movie_genre_matrix <- as.matrix(movie_genre_df)
 
@@ -207,9 +206,7 @@ cosine_sim_func <- function(user_genre_matrix, movie_genre_matrix){
   user_movie_cosine_sim_matrix = zaehler / nenner
   
   user_movie_cosine_sim_matrix 
-  
 }
-
 
 cosine_sim_func(test_user_genre_matrix, test_movie_genre_matrix)
 ```
@@ -267,6 +264,10 @@ ggplot(df_cosine_sim_matrix_long, aes(x = cosine_sim, fill = user_id)) +
   labs(title = "Dichteplot von verschiedenen User",
        x = "Cosine Similarity",
        y = "Density")
+
+ggplot(df_cosine_sim_matrix_long, aes(x = cosine_sim, color = )) + 
+  geom_density() + 
+  facet_wrap(~ user_id)
 ```
 
 
@@ -275,7 +276,14 @@ ggplot(df_cosine_sim_matrix_long, aes(x = cosine_sim, fill = user_id)) +
 ## 3.1 Bewertete Filme maskieren, d.h. "Negativabzug" der User-Items Matrix erzeugen, um anschliessend Empfehlungen herzuleiten.
 
 ```{r}
+movielense <- as(MovieLense,'matrix')
 
+movielense[1:5,1:4]
+
+movielense[is.na(movielense)] <- 1
+movielense[!is.na(movielense)] <- 0
+
+movielense[1:5,1:4]
 ```
 
 ## 3.2 Zeilensumme des "Negativabzuges" der User-Items Matrix für die
@@ -283,7 +291,8 @@ ggplot(df_cosine_sim_matrix_long, aes(x = cosine_sim, fill = user_id)) +
 User "5", "25", "50" und "150" ausgeben.
 
 ```{r}
-
+user_list = c(5,25,50,150)
+user_list
 ```
 
 ## 3.3 5-Zahlen Statistik der Zeilensumme des "Negativabzuges" der UserItems Matrix bestimmen.
