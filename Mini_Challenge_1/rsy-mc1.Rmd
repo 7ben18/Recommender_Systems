@@ -738,49 +738,96 @@ Aufgabe 7: Vergleiche
 Memory-based IBCF und Modell-based SVD Recommenders bezüglich Überschneidung ihrer Top-N Empfehlungen für die User-Item Matrix des reduzierten Datensatzes (Basis: reduzierter Datensatz, IBCF mit 30 Nachbarn und Cosine Similarity).
 Vergleiche wie sich der Anteil übereinstimmender Empfehlungen der Top-15 Liste für IBCF vs verschiedene SVD Modelle verändert, wenn die Anzahl der Singulärwerte für SVD von 10 auf 20, 30, 40, 50 verändert wird.
 ```{r}
-generate_SVD_topNList<- function(ksvd){
-	temp <- Recommender(training_1, "SVD", param=list(k= ksvd))
-	temp <- predict(temp, test, n=15)
-  temp
+# Funktion fuer SVD Model
+generate_SVD_topN_recomm <- function(train, test, svd_value = ksvd){
+	recom_model <- Recommender(train, "SVD", param=list(k= svd_value))
+	top_n_recom <- predict(recom_model, test, n=15)
+  top_n_recom
+}
+
+# Funktion fuer verschiedene N
+generate_SVD_topN_lists <- function(train, test, N_values) {
+  rsvd_topN_lists <- list()
+  for (i in 1:length(N_values)) {
+    N <- N_values[i]
+    list_name <- paste0("rsvd", N, "topNList")
+    rsvd_topN_lists[[list_name]] <- generate_SVD_topN_recomm(train, test, N)
+  }
+  rsvd_topN_lists
 }
 ```
 
+
 ```{r}
-rsvd10topNList <- generate_SVD_topNList(10)
-rsvd20topNList <- generate_SVD_topNList(20)
-rsvd30topNList <- generate_SVD_topNList(30)
-rsvd40topNList <- generate_SVD_topNList(40)
-rsvd50topNList <- generate_SVD_topNList(50)
+N_values <- c(10, 20, 30, 40, 50)
+rsvd_topN_lists_1 <- generate_SVD_topN_lists(training_1, test_1, N_values)
+print("Erster Datensatz")
+rsvd_topN_lists_1
+
+rsvd_topN_lists_2 <- generate_SVD_topN_lists(training_2, test_2, N_values)
+print("Zweiter Datensatz")
+rsvd_topN_lists_2
+```
+
+
+```{r}
+# alternative... 
+#rsvd10topN_df_1 <- topN_df(rsvd_topN_lists_1$rsvd10topNList)
+#rsvd20topN_df_1 <- topN_df(rsvd_topN_lists_1$rsvd20topNList)
+#rsvd30topN_df_1 <- topN_df(rsvd_topN_lists_1$rsvd30topNList)
+#rsvd40topN_df_1 <- topN_df(rsvd_topN_lists_1$rsvd40topNList)
+#rsvd50topN_df_1 <- topN_df(rsvd_topN_lists_1$rsvd50topNList)
+
+#rsvd10topN_df_2 <- topN_df(rsvd_topN_lists_2$rsvd10topNList)
+#rsvd20topN_df_2 <- topN_df(rsvd_topN_lists_2$rsvd20topNList)
+#rsvd30topN_df_2 <- topN_df(rsvd_topN_lists_2$rsvd30topNList)
+#rsvd40topN_df_2 <- topN_df(rsvd_topN_lists_2$rsvd40topNList)
+#rsvd50topN_df_2 <- topN_df(rsvd_topN_lists_2$rsvd50topNList)
+
+# mittels forloop :)
+generate_topN_dfs <- function(rsvd_topN_lists) {
+  topN_dfs <- list()
+  
+  for (i in 1:length(rsvd_topN_lists)) {
+    list_name <- names(rsvd_topN_lists)[i]
+    df_name <- paste0(list_name, "_df")
+    topN_dfs[[df_name]] <- topN_df(rsvd_topN_lists[[i]])
+  }
+  
+  topN_dfs
+}
+
+topN_df_svd_1 <- generate_topN_dfs(rsvd_topN_lists_1)
+print("Erster Datensatz")
+topN_df_svd_1
+
+topN_df_svd_2 <- generate_topN_dfs(rsvd_topN_lists_2)
+print("Zweiter Datensatz")
+topN_df_svd_2
+
+
 ```
 
 ```{r}
-rsvd10topNList <- cftopNList_to_df(rsvd10topNList, "rsvd10topNList")
-rsvd20topNList <- cftopNList_to_df(rsvd20topNList, "rsvd20topNList")
-rsvd30topNList <- cftopNList_to_df(rsvd30topNList, "rsvd30topNList")
-rsvd40topNList <- cftopNList_to_df(rsvd40topNList, "rsvd40topNList")
-rsvd50topNList <- cftopNList_to_df(rsvd50topNList, "rsvd50topNList")
-```
+compare_ibcf_svd <- function(ribcf, svd, svd_value) {
+  intersect <- intersect(ribcf$Movie, svd$Movie)
+  print(paste("Anzahl gemeinsame Empfehlungen SVD", svd_value, ":", length(intersect)))
+  print(paste("Anteil", svd_value, ":", length(intersect) / nrow(ribcf) * 100))
+}
 
-```{r}
-IntersectIBCFSVD10 <- intersect(ribcftopNList$ribcftopNList, rsvd10topNList$rsvd10topNList)
-paste("Anzahl gemeinsame Empfehlungen SVD10:", length(IntersectIBCFSVD10))
-paste("Anteil SVD10:", length(IntersectIBCFSVD10) / nrow(rsvd10topNList) * 100)
+print("Erster Datensatz")
+compare_ibcf_svd(ribcftopN_df_1, topN_df_svd_1$rsvd10topNList_df, 10)
+compare_ibcf_svd(ribcftopN_df_1, topN_df_svd_1$rsvd20topNList_df, 20)
+compare_ibcf_svd(ribcftopN_df_1, topN_df_svd_1$rsvd30topNList_df, 30)
+compare_ibcf_svd(ribcftopN_df_1, topN_df_svd_1$rsvd40topNList_df, 40)
+compare_ibcf_svd(ribcftopN_df_1, topN_df_svd_1$rsvd50topNList_df, 50)
 
-IntersectIBCFSVD20 <- intersect(ribcftopNList$ribcftopNList, rsvd20topNList$rsvd20topNList)
-paste("Anzahl gemeinsame Empfehlungen SVD20:", length(IntersectIBCFSVD20))
-paste("Anteil SVD20:", length(IntersectIBCFSVD20) / nrow(rsvd20topNList) * 100)
-
-IntersectIBCFSVD30 <- intersect(ribcftopNList$ribcftopNList, rsvd30topNList$rsvd30topNList)
-paste("Anzahl gemeinsame Empfehlungen SVD30:", length(IntersectIBCFSVD30))
-paste("Anteil SVD30:", length(IntersectIBCFSVD30) / nrow(rsvd30topNList) * 100)
-
-IntersectIBCFSVD40 <- intersect(ribcftopNList$ribcftopNList, rsvd40topNList$rsvd40topNList)
-paste("Anzahl gemeinsame Empfehlungen SVD40:", length(IntersectIBCFSVD40))
-paste("Anteil SVD40:", length(IntersectIBCFSVD40) / nrow(rsvd40topNList) * 100)
-
-IntersectIBCFSVD50 <- intersect(ribcftopNList$ribcftopNList, rsvd50topNList$rsvd50topNList)
-paste("Anzahl gemeinsame Empfehlungen SVD50:", length(IntersectIBCFSVD50))
-paste("Anteil SVD50:", length(IntersectIBCFSVD50) / nrow(rsvd50topNList) * 100)
+print("Zweiter Datensatz")
+compare_ibcf_svd(ribcftopN_df_2, topN_df_svd_2$rsvd10topNList_df, 10)
+compare_ibcf_svd(ribcftopN_df_2, topN_df_svd_2$rsvd20topNList_df, 20)
+compare_ibcf_svd(ribcftopN_df_2, topN_df_svd_2$rsvd30topNList_df, 30)
+compare_ibcf_svd(ribcftopN_df_2, topN_df_svd_2$rsvd40topNList_df, 40)
+compare_ibcf_svd(ribcftopN_df_2, topN_df_svd_2$rsvd50topNList_df, 50)
 ```
 
 # 8 Implementierung Top-N Metriken
@@ -814,8 +861,15 @@ Aufgabe 9
 ## 9.1 Verwende für die Evaluierung 10-fache Kreuzvalidierung
 ```{r}
 set.seed(1234)
-scheme <- evaluationScheme(MovieLenseCompact_1, method="cross-validation", k = 10, given=3, goodRating=5)
-scheme
+scheme_1 <- evaluationScheme(MovieLenseCompact_1, method="cross-validation", k = 10, given=3, goodRating=5)
+scheme_2 <- evaluationScheme(MovieLenseCompact_2, method="cross-validation", k = 10, given=3, goodRating=5)
+
+print("Erste Datenreduktion")
+scheme_1
+print("Zweite Datenreduktion")
+scheme_2
+
+
 ```
 
 ## 9.2 Begründe deine Wahl von Metriken und Modell
@@ -828,11 +882,16 @@ algorithms <- list("hybrid" = list(name = "HYBRID", param =list(recommenders = l
                    "user-based CF" = list(name="UBCF", param=list(nn=50)),
                    "item-based CF" = list(name="IBCF", param=list(k=50)),
                    "SVD40" = list(name="SVD", param=list(k = 40)))
-results <- evaluate(scheme, algorithms, type = "topNList", n=c(10, 15, 20, 25, 30))
+
+print("Erster Datensatz")
+results_1 <- evaluate(scheme_1, algorithms, type = "topNList", n=c(10, 15, 20, 25, 30))
+print("Zweiter Datensatz")
+results_2 <- evaluate(scheme_2, algorithms, type = "topNList", n=c(10, 15, 20, 25, 30))
 ```
 
 ```{r}
-plot(results, annotate=c(1,3), legend="topleft")
+plot(results_1, annotate=c(1,3), legend="topleft")
+plot(results_2, annotate=c(1,3), legend="topleft")
 ```
 
 ## 9.3 Analysiere das beste Modell für Top-N Recommendations mit N = 10, 15, 20, 25 und 30,
@@ -842,11 +901,14 @@ vieles blabaalabaaassss
 ```{r}
 algorithmsimprovedrecom <- list("popular items center" = list(name="POPULAR", param=NULL),
                    "popular items Z-score" = list(name="POPULAR", param=list(normalize="Z-score")))
-resultsimprovedrecom <- evaluate(scheme, algorithmsimprovedrecom, type = "topNList", n=c(10, 15, 20, 25, 30))
+
+resultsimprovedrecom_1 <- evaluate(scheme_1, algorithmsimprovedrecom, type = "topNList", n=c(10, 15, 20, 25, 30))
+resultsimprovedrecom_2 <- evaluate(scheme_2, algorithmsimprovedrecom, type = "topNList", n=c(10, 15, 20, 25, 30))
 ```
 
 ```{r}
-plot(resultsimprovedrecom, annotate=c(1,3), legend="topleft")
+plot(resultsimprovedrecom_1, annotate=c(1,3), legend="topleft")
+plot(resultsimprovedrecom_2, annotate=c(1,3), legend="topleft")
 ```
 
 Hinweis: Verwende für den Top-Movie Recommender die Filme mit den höchsten Durchschnittsratings.
