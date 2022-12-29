@@ -339,59 +339,99 @@ Aufgabe 3: Erzeuge einen IBCF Recommender und analysiere die Ähnlichkeitsmatrix
 
 ## 3.1 Zerlege den reduzierten MovieLense Datensatz in ein disjunktes Trainings-und Testdatenset im Verhältnis 4:1,
 ```{r}
-training <- MovieLenseCompact_1[1:320] 
-test <- MovieLenseCompact_1[321:400]
+train_test_split <- function(movie_df, split = 0.8) {
+  n <- dim(movie_df)[1]
+  n_train <- round(n * split)
+  n_test <- n - n_train
+  training <- movie_df[1:n_train]
+  test <- movie_df[(n_train + 1):n]
+  return(list(training, test))
+}
 
-training
-test
+train_test_list_1 <- train_test_split(MovieLenseCompact_1)
+training_1 <- train_test_list_1[[1]]
+test_1 <- train_test_list_1[[2]]
+training_1
+test_1
 
-
+train_test_list_2 <- train_test_split(MovieLenseCompact_2)
+training_2 <- train_test_list_2[[1]]
+test_2 <- train_test_list_2[[2]]
+training_2
+test_2
 
 ```
+Beide reduzierten Datensaetze wurden im Verhaletnis 4:1, (4 Teile Training und 1 Teil Test) reduziert.
 
 ## 3.2 Trainiere ein IBCF Modell mit 30 Nachbarn und Cosine Similarity
 ```{r}
-ribcf <- Recommender(training, "IBCF", param=list(k= 30, method = "cosine"))
-ribcf
+ribcf_1 <- Recommender(training_1, "IBCF", param=list(k= 30, method = "cosine"))
+ribcf_1
+
+ribcf_2 <- Recommender(training_2, "IBCF", param=list(k= 30, method = "cosine"))
+ribcf_2
 ```
+Es wurden jeweils fuer beide reduzierten Datensaetze ein ribcf Modell trainiert mit dem recommenderlab zur Verfuegung gestellte Methode.
 
 ## 3.3 Bestimme die Verteilung der Filme, welche bei IBCF für paarweise Ähnlichkeitsvergleiche verwendet werden
 ```{r}
-# get model
-ribcf_model <- getModel(ribcf)
+ribcf_sim_item_df <- function(ribcf) {
+  # model
+  ribcf_model <- getModel(ribcf)
+  # dataframe erstellen
+  ribcf_sim_df <- as.data.frame(colSums(ribcf_model$sim > 0))
+  # Item als neue Spalte hinzufuegen und Index entfernen
+  ribcf_sim_df_ <- cbind(item = rownames(ribcf_sim_df), ribcf_sim_df)
+  rownames(ribcf_sim_df_) <- NULL
+  # return df
+  ribcf_sim_df_
+}
 
-# create DataFrame 
-ribcf_sim_df <- as.data.frame(colSums(ribcf_model$sim > 0))
+ribcf_sim_viz <- function(ribcf_sim_df_, n_reduc) {
+    ribcf_sim_df_ %>%
+    rename(Anzahl = 2) %>% 
+    ggplot(aes(x = Anzahl)) + 
+    geom_histogram(binwidth =  0.1) +
+    labs(title = "Verteilung der Ähnlichkeitsvergleiche",
+         x = "Anzahl Filme als Nachbar", 
+         y = "Anzahl",
+         subtitle = paste("ribcf", n_reduc))
+}
 
-# Item als neue Spalte hinzufuegen und Index entfernen
-ribcf_sim_df_ <- cbind(item = rownames(ribcf_sim_df), ribcf_sim_df)
-rownames(ribcf_sim_df_) <- NULL
+ribcf_sim_df_1 <- ribcf_sim_item_df(ribcf_1)
+ribcf_sim_viz(ribcf_sim_df_1, 1)
 
-# Visualiseren mittels Histogramm
-ribcf_sim_df_ %>%
-  rename(Anzahl = 2) %>% 
-  ggplot(aes(x = Anzahl)) + 
-  geom_histogram(binwidth =  0.1) +
-  labs(title = "Verteilung der Ähnlichkeitsvergleiche",
-       x = "Anzahl Filme als Nachbar", 
-       y = "Anzahl")
+ribcf_sim_df_2 <- ribcf_sim_item_df(ribcf_2)
+ribcf_sim_viz(ribcf_sim_df_2, 2)
+
+
 ```
-Im Histogramm erkennt man die Anzahl Filme die als Nachbar bei einem anderen Film 
-auftauchen.  
+Im Histogramm erkennt man die Anzahl Filme die als Nachbar bei einem anderen Film auftauchen. Beide Plots sind deutlich unterschiedlich
 
 ## 3.4 Bestimme die Filme, die am häufigsten in der Cosine-Ähnlichkeitsmatrix auftauchen und analysiere deren Vorkommen und Ratings im reduzierten Datensatz.
-```{r}
-ribcf_sim_df_
-```
 
-```{r}
-ribcf_sim_df_ %>% 
+```{r, warning=FALSE}
+top_10_item_sim <- function(ribcf_sim_df_, n_reduc) {
+  result <- ribcf_sim_df_ %>% 
   rename(Anzahl = 2) %>% 
   arrange(desc(Anzahl)) %>% 
-  top_n(10) %>% 
+  top_n(10)
+    
+  print(result)
+    
+  result %>%   
   ggplot(aes(x = Anzahl, y = item)) +
-  geom_col(alpha = 0.5, color = "black", fill = "limegreen")
+  # arrange desc
+  geom_col(alpha = 0.5, color = "black", fill = "limegreen") +
+  labs(title = "Top 10 Filme die am häufigsten in der Nachbarschaft andere Filme auftauchen",
+       x = "Anzahl Film als Nachbar", 
+       y = "Filme",
+       subtitle = paste("ribcf", n_reduc))
+}
   
+top_10_item_sim(ribcf_sim_df_1, 1)
+top_10_item_sim(ribcf_sim_df_2, 2)
+
 ```
 
 Top 10 Filme die am haeufigesten in der Nachbarschaft andere Filme auftauchen.
@@ -506,15 +546,15 @@ reduzierten Datensatz.
 ## 5.1 Berechne Top-15 Empfehlungen für Testkunden mit IBCF und UBCF 
 ### 5.1.1 ribcf & rubcf Modell trainieren
 ```{r}
-ribcf <- Recommender(training, "IBCF", param=list(k= 30, method = "cosine"))
-ribcf
-rubcf <- Recommender(training, "UBCF", param=list(nn= 30, method = "cosine"))
+ribcf_1 <- Recommender(training_1, "IBCF", param=list(k= 30, method = "cosine"))
+ribcf_1
+rubcf <- Recommender(training_1, "UBCF", param=list(nn= 30, method = "cosine"))
 rubcf
 ```
 
 ### 5.1.2 Model Predicitions erstellen
 ```{r}
-ribcftopNList <- predict(ribcf, test, n=15)
+ribcftopNList <- predict(ribcf_1, test, n=15)
 ribcftopNList
 
 rubcftopNList <- predict(rubcf, test, n=15)
@@ -553,7 +593,7 @@ rubcftopNList
 ribcftopNList %>% 
   ggplot(aes(x = Anzahl)) + 
   geom_histogram(fill = "lightblue", color = "black") +
-  labs(title = "Verteilung der Anzahl Empfehlungen ribcf")
+  labs(title = "Verteilung der Anzahl Empfehlungen ribcf_1")
 ```
 
 ```{r}
@@ -583,7 +623,7 @@ paste("Anteil UBCF:", length(IntersectordRatCosine) / nrow(rubcftopNList) * 100)
 
 ## 6.2 IBCF vs UBCF, beide mit binärem Rating und Jaccard Similarity für alle Testkunden,
 ```{r}
-training_bin <- binarize(training, minRating = 4)
+training_bin <- binarize(training_1, minRating = 4)
 test_bin <- binarize(test, minRating = 4)
 
 ribcf_bin <- Recommender(training_bin, "IBCF", param=list(k= 30, method = "jaccard"))
@@ -644,7 +684,7 @@ Memory-based IBCF und Modell-based SVD Recommenders bezüglich Überschneidung i
 Vergleiche wie sich der Anteil übereinstimmender Empfehlungen der Top-15 Liste für IBCF vs verschiedene SVD Modelle verändert, wenn die Anzahl der Singulärwerte für SVD von 10 auf 20, 30, 40, 50 verändert wird.
 ```{r}
 generate_SVD_topNList<- function(ksvd){
-	temp <- Recommender(training, "SVD", param=list(k= ksvd))
+	temp <- Recommender(training_1, "SVD", param=list(k= ksvd))
 	temp <- predict(temp, test, n=15)
   temp
 }
