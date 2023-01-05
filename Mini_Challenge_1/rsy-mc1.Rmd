@@ -875,7 +875,9 @@ compare_ibcf_svd(ribcftopN_df_2, topN_df_svd_2$rsvd40topNList_df, 40)
 compare_ibcf_svd(ribcftopN_df_2, topN_df_svd_2$rsvd50topNList_df, 50)
 ```
 
-Für den ersten Datensatz werden bei SVD Wert 10 76 gemeinsame Empfehlungen mit IBCF generiert. Dies entspricht einem Anteil von 15.6% der Empfehlungen vom SVD Modell. Bis zur Anzahl von 50 Singulärwerten steigt die Anzahl gemeinsamer Empfehlungen auf 117, was einem Anteil von 24% entspricht. 
+Für den ersten Datensatz werden bei SVD Wert 10 76 gemeinsame Empfehlungen mit IBCF generiert. Dies entspricht einem Anteil von 15.6% der Empfehlungen vom SVD Modell. Bis zur Anzahl von 50 Singulärwerten steigt die Anzahl gemeinsamer Empfehlungen auf 117, was einem Anteil von 24% der Empfehlungen von IBCF entspricht. Für den ersten Datensatz lässt sich also eine stetige Zunahme der Übereinstimmungen und relativer Anteil der Übereinstimmungen feststellen. Eine ähnliche Zunahme lässt sich auch bei dem zweiten Datensatz feststellen. Allerdings sind die Anzahl Übereinstimmungen tiefer und von 40 zu 50 Singulärwerten werden keine zusätzlichen Übereinstimmungen mehr generiert.
+
+Bei der Singulärwertezerlegung und -rekonstruktion werden die Resultate mit steigender Anzahl Singulärwerte zuerst raschen, dann langsamer besser. Ein ähnliches Verhalten sehen wir auch hier. Mit zunehmenden Singulärwerten wird die Übereinstimmung mit den Empfehlungen von IBCF höher. Das lässt nicht direkt den Schluss zu, dass IBCF besser als SVD mit einem tiefen Wert ist, aber die Resultate werden mit zunehmenden Singulärwerten besser. 
 
 # 8 Implementierung Top-N Metriken
 Aufgabe 8 (DIY) 
@@ -896,12 +898,17 @@ len_all_items_8
 coverageN <- len_items_8 / len_all_items_8
 coverageN
 ```
-41.7 % der vorhandenen Filme werden empfohlen.
+Zur Überprüfung des Datensatzes haben wir die Anzahl Filme des aktuellen MovieLense Datensatzes ausgegeben, er beträgt weiterhin 1'664 Items.
+Unsere Berechnung anhand der Formel, die du im Space unter Beiträge gepostet hast, ergibt, dass41.7 % der vorhandenen Filme empfohlen werden. Dies bestätigt unsere Erkenntnis aus Aufgabe 5, wonach nicht allen Usern die gleichen Items empfohlen werden.
 
 ## 8.2 NoveltyN
 ```{r}
 nratings(MovieLense) / len_all_items_8
 ```
+
+Wieder in Anlehnung an deine Beschreibung dividieren wir die Anzahl sämtlicher Ratings durch die Anzahl Items. Das Resultat sagt aus, dass rund 60 mal mehr Ratings abgegeben wurden, als Items vorhanden sind.
+
+to-do: Stimmt Berechnung von 8.2? Unterschiedliche Listenlängen!
 
 # 9 Wahl des optimalen Recommenders
 Aufgabe 9
@@ -936,13 +943,21 @@ print("Zweiter Datensatz")
 results_2 <- evaluate(scheme_2, algorithms, type = "topNList", n=c(10, 15, 20, 25, 30))
 ```
 
+Dieser Print sagt nur aus, wie lange einzelne Berechnungen gedauert haben. Wir kommentieren ihn deshalb nicht vertieft.
+
 ```{r}
 plot(results_1, annotate=c(1,3), legend="topleft")
 plot(results_2, annotate=c(1,3), legend="topleft")
 ```
 
 ## 9.3 Analysiere das beste Modell für Top-N Recommendations mit N = 10, 15, 20, 25 und 30,
-vieles blabaalabaaassss
+In Aufgabe 9.2 haben wir eine ROC Kurve gemäss Vorlage von Recommenderlab erstellt. Auf der x-Achse befindet sich die FPR (false positive rate) und auf der y-Achse die TPR (true positive rate). Die Methode popular items generiert den tiefsten FPR und TPR für N = 10. Da die selbe Methode bis N = 30 das beste Verhältnis (höchste Kurve und höchster AUC) aufweist, ist dies das beste Modell. Den zweiten Platz teilen sich das hybride Modell und SVD mit 40 Werten. Die Kurve der beiden liegt ständig übereinander. Am schlechtesten hat das item-based CF Model abgeschnitten, welches zwar gleich wie das user-based angefangen hat, dann aber die TPR nicht mehr gleich stark verbessern konnte.
+
+Beim zweiten Datensatz haben die Modell das gleiche Resultat generiert, ausser, dass die mittleren Modell näher zusammen liegen und item-based stärker zurück liegt. Für diesen Datensatz konnte das Modell von Recommenderlab kein Resultat für user-based berechnen. Die entsprechende Fehlermeldung ist auch bei der Generierung in Aufgabe 9.2 aufgetaucht.
+
+Nachdem, was wir über Recommender Systems gelernt haben, haben wir eigentlich nicht erwartet, dass das popular Modell am besten abschneidet. Wir haben eher erwartet, dass du uns einen Datensatz gibst, bei dem user- und item-based besser abschneiden, weil wir im Lernmaterial viel darüber gelernt haben. Da das Resultat genau umgekehrt ist, haben wir überprüft, ob ein Fehler vorliegen könnte, wir haben diesen aber nicht gefunden.
+
+Beim Vergleich der beiden Datensätze gehen wir davon aus, dass die tiefer TPR und leicht höhere FPR davon kommt, dass die Matrix erkennbar sparser ist und damit weniger Trainingsdaten vorhanden sind.
 
 ## 9.4 Optimiere dein bestes Modell hinsichtlich Hyperparametern
 ```{r}
@@ -958,7 +973,8 @@ plot(resultsimprovedrecom_1, annotate=c(1,3), legend="topleft")
 plot(resultsimprovedrecom_2, annotate=c(1,3), legend="topleft")
 ```
 
-Hinweis: Verwende für den Top-Movie Recommender die Filme mit den höchsten Durchschnittsratings.
+Nachdem wir festgestellt haben, dass popular das beste Modell ist, blieb uns für die Optimierung der Hyperparameter nur die Anpassung der Normierung. Einerseits steht die klassische Zentralisierung der Daten und andererseits die Normierung mittels Z-Score zur Verfügung. Das Modell hat mit den selben N Werten keine sichtbaren Unterschiede zwischen den Normierungsmethoden generiert. Das gilt für beide Datensätze. Da die dargestellte Berechnungsdauer für beide Methoden gleich lang ist, entscheiden wir uns für die normale Normierung, da diese einfacher zu berechnen ist. Wir erwarten dadurch einen Performancevorteil bei grösseren Datensätzen.
+
 # 10 Implementierung Top-N Monitor
 Aufgabe 10 (DIY): Untersuche die relative Übereinstimmung zwischen
 Top-N Empfehlungen und präferierten Filmen für 4 unterschiedliche
