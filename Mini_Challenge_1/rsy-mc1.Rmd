@@ -415,7 +415,7 @@ ribcf_sim_viz <- function(ribcf_sim_df_, n_reduc) {
     ribcf_sim_df_ %>%
     rename(Anzahl = 2) %>% 
     ggplot(aes(x = Anzahl)) + 
-    geom_histogram(binwidth =  0.1) +
+    geom_histogram(binwidth =  1) +
     labs(title = "Verteilung der Ähnlichkeitsvergleiche",
          x = "Anzahl Filme als Nachbar", 
          y = "Anzahl",
@@ -430,7 +430,8 @@ ribcf_sim_viz(ribcf_sim_df_2, 2)
 
 
 ```
-Im Histogramm erkennt man die Anzahl Filme die als Nachbar bei einem anderen Film auftauchen. Beide Plots sind deutlich unterschiedlich
+In beiden Histogrammen erkennen wir auf der X Achse die Anzahl Filme die als Nachbar bei einem anderen Film vorkommen. Man erkennt im Plot, dass es wenige Filme gibt, die häufig viele Nachbaren haben. Beide Plots folgene einer ähnlichen Verteilung. 
+
 
 ## 3.4 Bestimme die Filme, die am häufigsten in der Cosine-Ähnlichkeitsmatrix auftauchen und analysiere deren Vorkommen und Ratings im reduzierten Datensatz.
 
@@ -458,7 +459,7 @@ top_10_item_sim(ribcf_sim_df_2, 2)
 
 ```
 
-Für jeden der beiden Datensätze haben wir einen Dataframe und Plot mit den Filmen, die am häufigsten in der Cosine-Ähnlichkeitsmatrix auftauchen, erstellt. Bei den top 10 Filmen sind keine Gemeinsamkeiten ersichtlich. Die Anzahl der Vorkommen ist aber ähnlich, der höchste Wert ist zwischen 150 und 160 und die Nummer 10 liegt bei 120 Vorkommen.
+Für jeden der beiden Datensätze haben wir einen Dataframe und Plot mit den Filmen, die am häufigsten in der Cosine-Ähnlichkeitsmatrix auftauchen, erstellt. Bei den top 10 Filmen sind keine Gemeinsamkeiten ersichtlich. Die Anzahl der Vorkommen ist aber ähnlich, der höchste Wert ist zwischen 150 und 160 Vorkommen.
 
 # 4 Implementierung Ähnlichkeitsmatrix
 Aufgabe 4 (DIY): Implementiere eine Funktion zur effizienten
