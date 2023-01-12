@@ -881,31 +881,170 @@ Für den ersten Datensatz werden bei SVD Wert 10 76 gemeinsame Empfehlungen mit 
 Bei der Singulärwertezerlegung und -rekonstruktion werden die Resultate mit steigender Anzahl Singulärwerte zuerst raschen, dann langsamer besser. Ein ähnliches Verhalten sehen wir auch hier. Mit zunehmenden Singulärwerten wird die Übereinstimmung mit den Empfehlungen von IBCF höher. Das lässt nicht direkt den Schluss zu, dass IBCF besser als SVD mit einem tiefen Wert ist, aber die Resultate werden mit zunehmenden Singulärwerten besser. 
 
 # 8 Implementierung Top-N Metriken
+
 Aufgabe 8 (DIY) 
+
 ## 8.1 CoverageN 
 ```{r}
+# Testing before creating the CoverageN function
+# create ribcf Model
 ribcf_8 <- Recommender(MovieLense, "IBCF", param=list(k= 30, method = "cosine"))
-ribcf_8
+#ribcf_8
 
+# predict all movies for every user
 ribcftopNList_8 <- predict(ribcf_8, MovieLense, n=15)
-ribcftopNList_8
+#ribcftopNList_8
 
+# get the list of unique items for all user
 list_items_8 <- unique(unlist(as(ribcftopNList_8, "list"), use.names = FALSE))
+#list_items_8
+
+# get the length of this list
 len_items_8 <- length(list_items_8)
+paste("Top-N Liste der Kunden:", len_items_8)
 
+# get length of total items
 len_all_items_8 <- dim(MovieLense)[2]
-len_all_items_8
+paste("Menge aller Produkte:", len_all_items_8)
 
+# calculate coverageN
 coverageN <- len_items_8 / len_all_items_8
-coverageN
+paste("coverageN fuer ribcf_8 model mit n = 15", round(coverageN, 4))
+
 ```
-Zur Überprüfung des Datensatzes haben wir die Anzahl Filme des aktuellen MovieLense Datensatzes ausgegeben, er beträgt weiterhin 1'664 Items.
-Unsere Berechnung anhand der Formel, die du im Space unter Beiträge gepostet hast, ergibt, dass41.7 % der vorhandenen Filme empfohlen werden. Dies bestätigt unsere Erkenntnis aus Aufgabe 5, wonach nicht allen Usern die gleichen Items empfohlen werden.
+
+
+```{r}
+# create a function
+coverageN <- function(model, n, dataset) {
+  # predict all movies for every user
+  topNList <- predict(model, dataset, n = n)
+  
+  # get the list of unique items for all users
+  list_items <- unique(unlist(as(topNList, "list"), use.names = FALSE))
+  
+  # get the length of this list
+  len_items <- length(list_items)
+  
+  # get length of total items
+  len_all_items <- dim(dataset)[2]
+  
+  # calculate coverage
+  coverage <- len_items / len_all_items
+  
+  return(coverage)
+}
+
+ribcf_8_coverage <- coverageN(ribcf_8, 15, MovieLense)
+paste("Coverage fuer ribcf_8 model mit n = 15:", round(ribcf_8_coverage, 4))
+
+```
+
+```{r}
+# List of n values
+n_val <- c(5, 10, 15, 20, 25, 30)
+n_dataset <- c(MovieLense, MovieLenseCompact_1, MovieLenseCompact_2)
+
+# Create empty list
+coverage_values <- c()
+
+for (dataset in n_dataset) {
+  # For loop to iterate over n_values
+  ribcf_i <- Recommender(dataset, "IBCF", param=list(k= 30, method = "cosine"))
+  print(dataset)
+  
+  for (n in n_val) {
+    # calculate coverageN with ribcf_8
+    coverage <- coverageN(ribcf_i, n, dataset)
+    coverage_values <- c(coverage_values, coverage)
+    print(paste("Coverage for n =", n,  round(coverage, 4)))
+  }
+}
+```
+
+Space Beitrag über Coverage: https://spaces.technik.fhnw.ch/spaces/recommender-systems/beitraege/recommender-system-evaluierung-coverage-und-novelty-1 
+
+Zur Überprüfung des Datensatzes haben wir die Anzahl Filme des aktuellen MovieLense Datensatzes ausgegeben, er beträgt weiterhin 1'664 Items. Unsere Berechnung anhand der Formel, die du im Space unter Beiträge gepostet hast, ergibt, dass 41.7 % der vorhandenen Filme empfohlen werden. Dies bestätigt unsere Erkenntnis aus Aufgabe 5, wonach nicht allen Usern die gleichen Items empfohlen werden. Auch erkennen wir, das durch die steigende Anzahl an n (Anzahl Items Empfehlung) erhöht sich auch entsprechend Coverage, was auch Sinn macht denn der Zähler, sprich die Anzahl einzigartige Filmen grösser sind bei einer grösseren Anzahl n, da mehr Filme für jeden User vorgeschlagen werden. Diese Beobachung können wir beim kompletten MovieLense Datensatz sowie bei den beiden reduzierten Datensätzen sehen.  
 
 ## 8.2 NoveltyN
 ```{r}
 nratings(MovieLense) / len_all_items_8
 ```
+
+```{r}
+# Kreuztabelle erstellen Item vs Anzahl Rating
+movie_ratings_counts <- table(MovieLenseEDA$item)
+
+# dividieren durch Gesamtanzahl Item im Datensatz und logarithmieren
+log_popularity <- log(movie_ratings_counts/dim(MovieLenseEDA)[2])
+
+# Von jedem Film die Popularity als Dataframe
+log_pop_df <- data.frame(log_popularity = log_popularity)
+log_pop_df
+
+# Anzahl User
+S_user <- dim(MovieLense)[1]
+paste("Anzahl aller Kunden", S_user)
+# Anzahl Items
+N_item <- dim(MovieLense)[2]
+paste("Anzahl aller Items", N_item)
+
+# Model
+ribcf_model <- Recommender(MovieLense, "IBCF", param=list(k= 30, method = "cosine"))
+
+# get prediction for every user
+ribcf_model_prediction <- predict(ribcf_8, MovieLense, n=15)
+
+ribcf_model_prediction_list <- unlist(as(ribcf_model_prediction, "list"), use.names = FALSE)
+
+# create a dataframe
+ribcf_model_prediction_df <- data.frame(ribcf_model_prediction_list)
+
+# join ribcf_model_prediction_df and log_pop_df
+join_df <- merge(ribcf_model_prediction_df, log_pop_df, by.x = "ribcf_model_prediction_list", by.y = "log_popularity.Var1")
+
+novelty <- -1/N_item * sum(join_df$log_popularity.Freq) / S_user
+
+novelty
+
+```
+
+
+```{r}
+# create function
+novelty <- function(dataset, model, n) {
+  
+  movie_ratings_counts <- table(dataset$item)
+  
+  log_popularity <- log(movie_ratings_counts/dim(dataset)[2])
+  
+  log_pop_df <- data.frame(log_popularity = log_popularity)
+  
+  S_user <- dim(dataset)[1]
+  N_item <- dim(dataset)[2]
+  
+  ribcf_model_prediction <- predict(model, dataset, n)
+  
+  ribcf_model_prediction_list <- unlist(as(ribcf_model_prediction, "list"), use.names = FALSE)
+  
+  ribcf_model_prediction_df <- data.frame(ribcf_model_prediction_list)
+  
+  join_df <- merge(ribcf_model_prediction_df, log_pop_df, by.x = "ribcf_model_prediction_list", by.y = "log_popularity.Var1")
+  
+  novelty <- -1/N_item * sum(join_df$log_popularity.Freq) / S_user
+  
+  return(novelty)
+}
+
+
+ribcf_model <- Recommender(MovieLense, "IBCF", param=list(k= 30, method = "cosine"))
+
+#novelty(MovieLenseEDA, ribcf_model, 15)
+# keine Ahnung warum es nicht funktioniert...
+
+```
+
+
 
 Wieder in Anlehnung an deine Beschreibung dividieren wir die Anzahl sämtlicher Ratings durch die Anzahl Items. Das Resultat sagt aus, dass rund 60 mal mehr Ratings abgegeben wurden, als Items vorhanden sind.
 
@@ -1037,25 +1176,37 @@ ribcftopNList_10_df_transposed_tibble_pivot_genre
 
 ```{r}
 # pivot longer dataframe
-ribcftopNList_10_df_transposed_tibble_pivot_genre %>% group_by(testUsers) %>%
+topnmonitor_recom <- ribcftopNList_10_df_transposed_tibble_pivot_genre %>% group_by(testUsers) %>%
   summarise(across(everything(), ~ sum(., is.na(.), 0)))
+topnmonitor_recom
+
 ```
-
-
 
 ## 10.3 Bestimme pro Kunde den Anteil nach Genres seiner Top-Filme
 (=Filme mit besten Bewertungen),
+
 ```{r}
-
+topnmonitor_fav_movies <- MovieLenseEDA_Joined %>% filter(user %in% testUsers, rating == 5) %>% group_by(user) %>% summarise(across(c(unknown, Action, Adventure, Animation, `Children's`, Comedy, Crime, Documentary, Drama, Fantasy, `Film-Noir`, Horror, Musical, Mystery, Romance, `Sci-Fi`, Thriller, War, Western),sum)) %>% mutate(user = as.numeric(user)) %>%  arrange(user)
+topnmonitor_fav_movies
 ```
-
+ 
 ## 10.4 Vergleiche pro Kunde Top-Empfehlungen vs Top-Filme nach Genres,
 ```{r}
+a <- topnmonitor_recom[1,2:20]
+b <- topnmonitor_fav_movies[1,2:20]
 
+binded <- rbind(a, b)
+binded_complete <- binded %>% add_column(Type = c("topnmonitor_recom", "topnmonitor_fav_movies"))
+binded_complete
 ```
 
 ## 10.5 Definiere eine Qualitätsmetrik für Top-N Listen und teste sie.
+
 ```{r}
+rowSums(topnmonitor_recom[2:20] * topnmonitor_fav_movies[2:20]) /
+(sqrt(rowSums(topnmonitor_recom[2:20]^2))*sqrt(rowSums(topnmonitor_fav_movies[2:20]^2)))
 
 ```
+
+Wir haben uns für die Qualitätsmetrik Cosine Similarity entschieden. Da wir pro User zwei Vektoren haben, ist dies eine gute Metrik, um die Top-N Liste und die Top-Filme des Kunden zu vergleichen. Für den obersten User der Matrix wird ersichtlich, dass die Cosine Similarity 0.76 beträgt, die Ähnlichkeit zwischen den beiden Liste ist bei diesem User also ziemlich hoch. Dies sagt aus, dass User in etwa der gleiche Anteil pro Genre empfohlen wurde, wie er selber Top-Filme definiert hat.
 
