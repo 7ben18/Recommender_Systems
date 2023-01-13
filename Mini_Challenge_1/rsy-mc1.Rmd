@@ -1198,6 +1198,21 @@ b <- topnmonitor_fav_movies[1,2:20]
 binded <- rbind(a, b)
 binded_complete <- binded %>% add_column(Type = c("topnmonitor_recom", "topnmonitor_fav_movies"))
 binded_complete
+
+# pivot_longer binded_complete dataframe
+binded_complete_pivot <- pivot_longer(binded_complete, cols = 1:19, names_to = "genre", values_to = "value")
+binded_complete_pivot
+
+# create cleveland plot
+ggplot(binded_complete_pivot, aes(y = genre, x = value)) +
+  geom_point(aes(color = Type)) + 
+  geom_line(aes(group=genre)) + 
+  theme_minimal() +
+  labs(title = "Top-N Empfehlungen vs Top-Filme nach Genres", x = "Value", y = "Genre") +
+  theme(plot.title = element_text(hjust = 0.5))
+  
+
+
 ```
 
 ## 10.5 Definiere eine Qualitätsmetrik für Top-N Listen und teste sie.
