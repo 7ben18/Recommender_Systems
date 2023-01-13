@@ -528,7 +528,8 @@ get_jaccardsim_4 <- function(RatingMatrix, n_user, n_item){
 ```
 
 ```{r}
-get_jaccardsim_4(MovieLense, number_user, number_item)
+jaccardsim_4 <- get_jaccardsim_4(MovieLense, number_user, number_item)
+jaccardsim_4[1:5, 1:5]
 ```
 
 Bei der Jaccard Similarity sind wiederum nur positive Werte ersichtlich. Eine Auswertung dieser geplotteten Werte ergibt, dass sehr wenige Werte über 0.3 liegen. Die Ähnlichkeit dieser ersten 10 Filme gegenüber den ersten 100 anderen Items ist also eher gering.
@@ -562,6 +563,13 @@ rec_simMat
 ```
 
 ## 4.3 Vergleiche deine mittels Cosine Similarity erzeugten Ähnlichkeitsmatrix für ordinale Ratings mit der Jaccard-basierten Ähnlichkeitsmatrix für binäre Ratings.
+```{r}
+print("Cosine Similarity")
+result_cossim_4[1:5,1:5]
+
+print("jaccard-basiert")
+jaccardsim_4[1:5, 1:5]
+```
 
 
 # 5 Analyse Top-N Listen - IBCF vs UBCF
@@ -590,6 +598,10 @@ Es wurden für beide reduzierten Datensätze jeweils ein ibcf und ubcf Recommend
 ### 5.1.2 Model Predicitions erstellen
 ```{r}
 ribcftopNList_1 <- predict(ribcf_1, test_1, n=15)
+```
+
+
+```{r}
 ribcftopNList_1
 
 rubcftopNList_1 <- predict(rubcf_1, test_1, n=15)
@@ -1040,7 +1052,7 @@ novelty <- function(dataset, model, n) {
 ribcf_model <- Recommender(MovieLense, "IBCF", param=list(k= 30, method = "cosine"))
 
 #novelty(MovieLenseEDA, ribcf_model, 15)
-# keine Ahnung warum es nicht funktioniert...
+# funktioniert nicht
 
 ```
 
@@ -1123,6 +1135,7 @@ Dimensionalitätsreduktion).
 
 ## 10.1 Fixiere 20 zufällig gewählte Testkunden für alle Modellvergleiche,
 ```{r}
+# Testing before creating function
 # select 20 random users
 set.seed(1234)
 testUsers <- sample(1:nrow(MovieLense), 20)
@@ -1133,11 +1146,61 @@ MovieLenseTest <- MovieLense[testUsers,]
 MovieLenseTest
 ```
 
+
+```{r}
+# create function for select random users
+select_random_users <- function(data, num_users, seed) {
+  set.seed(seed)
+  testUsers <- sample(1:nrow(data), num_users)
+  dataTest <- data[testUsers,]
+  
+  return(list(testUsers, dataTest))
+}
+
+select_random_user <- select_random_users(MovieLense, 20, 1234)
+
+testUsers <- select_random_user[[1]]
+MovieLenseTest <- select_random_user[[2]]
+testUsers
+MovieLenseTest
+```
+
+```{r}
+# Make for both datasets
+# dataset 1
+select_random_user_1 <- select_random_users(MovieLenseCompact_1, 20, 1234)
+
+testUsers_1 <- select_random_user_1[[1]]
+MovieLenseTest_1 <- select_random_user_1[[2]]
+testUsers_1
+MovieLenseTest_1
+
+# dataset 2
+select_random_user_2 <- select_random_users(MovieLenseCompact_2, 20, 1234)
+
+testUsers_2 <- select_random_user_2[[1]]
+MovieLenseTest_2 <- select_random_user_2[[2]]
+testUsers_2
+MovieLenseTest_2
+
+```
+
+
 ## 10.2 Bestimme den Anteil der Top-N Empfehlung nach Genres pro Kunde,
 ```{r}
-# get from every TestUsers the Top_N item list
+# Modelle erstellen
 ribcf_10 <- Recommender(MovieLenseTest, "IBCF", param=list(k= 30, method = "cosine"))
 
+rubcf_10 <- Recommender(MovieLenseTest, "UBCF", parameter=list(method = "Euclidean", nn = 10, normalize = "Z-score"))
+
+rsvd_3 <- Recommender(MovieLenseTest, "SVD", param = list(k = 3))
+
+rsvd_5 <- Recommender(MovieLenseTest, "SVD", param = list(k = 5))
+```
+
+
+```{r}
+#ribcf_10
 # predict Top-N items for every user
 ribcftopNList_10 <- predict(ribcf_10, MovieLenseTest, n=15)
 
@@ -1182,6 +1245,87 @@ topnmonitor_recom
 
 ```
 
+```{r}
+get_top_n_items <- function(model, dataset, userlist) {
+  # predict Top-N items for every user
+  top_n_list <- predict(model, dataset, n = 15)
+  print(top_n_list)
+  
+  # create a list with the topN items for every user
+  top_n_list_list <- as(top_n_list, "list")
+  
+  # create a tibble with the topN items for every user
+  top_n_list_tibble <- as_tibble(top_n_list_list)
+  
+  # transform the tibble to a data frame
+  top_n_list_df <- as.data.frame(top_n_list_tibble)
+  
+  # replace colname with testUsers
+  colnames(top_n_list_df) <- userlist
+  
+  # transpose data frame
+  top_n_list_df_transposed <- t(top_n_list_df)
+  
+  # change top_n_list_df_transposed to a tibble
+  top_n_list_df_transposed_tibble <- as_tibble(top_n_list_df_transposed)
+  
+  # add a column with the testUsers
+  top_n_list_df_transposed_tibble$testUsers <- userlist
+  
+  # pivot longer dataframe
+  top_n_list_df_transposed_tibble_pivot <- pivot_longer(top_n_list_df_transposed_tibble, cols = 1:15, names_to = "topN", values_to = "itemID")
+  
+  # get genre from each item
+  top_n_list_df_transposed_tibble_pivot_genre <- left_join(top_n_list_df_transposed_tibble_pivot, MovieLenseMeta, by = c("itemID" = "title"))
+  
+  # drop columns topN, year, url
+  top_n_list_df_transposed_tibble_pivot_genre <- select(top_n_list_df_transposed_tibble_pivot_genre, -topN, -year, -url, -itemID)
+  
+  return(top_n_list_df_transposed_tibble_pivot_genre)
+}
+
+ribcftopNList_10_df_transposed_tibble_pivot_genre <- get_top_n_items(ribcf_10, MovieLenseTest, testUsers)
+ribcftopNList_10_df_transposed_tibble_pivot_genre
+```
+
+
+```{r}
+# both datasets
+n_dataset <- list(MovieLenseCompact_1, MovieLenseCompact_2)
+
+cnt <- 1
+top_n_list <- list()
+
+
+for (i in 1:length(n_dataset)) {
+  select_random_user <- select_random_users(n_dataset[[i]], 20, 1234)
+  testUser_i <- select_random_user[[1]]
+  MovieLense_i <- select_random_user[[2]]
+  
+  ribcf_10 <- Recommender(n_dataset[[i]], "IBCF", param=list(k= 30, method = "cosine"))
+
+  rubcf_10 <- Recommender(n_dataset[[i]], "UBCF", parameter=list(method = "Euclidean", nn = 10, normalize = "Z-score"))
+
+  rsvd_3 <- Recommender(n_dataset[[i]], "SVD", param = list(k = 3))
+
+  rsvd_5 <- Recommender(n_dataset[[i]], "SVD", param = list(k = 5))
+  
+  n_models <- list(ribcf_10, rubcf_10, rsvd_3, rsvd_5)
+  print(n_dataset[i])
+  for (j in 1:length(n_models)) {
+    get_top_n_items_df <- get_top_n_items(n_models[[j]], MovieLense_i, testUser_i)
+    topnmonitor_recom <- get_top_n_items_df %>% group_by(testUsers) %>%
+    summarise(across(everything(), ~ sum(., is.na(.), 0)))
+    
+    top_n_list[[cnt]] <- topnmonitor_recom
+    cnt <- cnt + 1
+  }
+}  
+  
+
+top_n_list
+```
+
 ## 10.3 Bestimme pro Kunde den Anteil nach Genres seiner Top-Filme
 (=Filme mit besten Bewertungen),
 
@@ -1189,6 +1333,29 @@ topnmonitor_recom
 topnmonitor_fav_movies <- MovieLenseEDA_Joined %>% filter(user %in% testUsers, rating == 5) %>% group_by(user) %>% summarise(across(c(unknown, Action, Adventure, Animation, `Children's`, Comedy, Crime, Documentary, Drama, Fantasy, `Film-Noir`, Horror, Musical, Mystery, Romance, `Sci-Fi`, Thriller, War, Western),sum)) %>% mutate(user = as.numeric(user)) %>%  arrange(user)
 topnmonitor_fav_movies
 ```
+
+```{r}
+# create function
+get_fav_movies_by_genre <- function(users) {
+  fav_movies_by_genre <- MovieLenseEDA_Joined %>% filter(user %in% users, rating == 5) %>% group_by(user) %>% summarise(across(c(unknown, Action, Adventure, Animation, `Children's`, Comedy, Crime, Documentary, Drama, Fantasy, `Film-Noir`, Horror, Musical, Mystery, Romance, `Sci-Fi`, Thriller, War, Western),sum)) %>% mutate(user = as.numeric(user)) %>%  arrange(user)
+  return(fav_movies_by_genre)
+}
+
+topnmonitor_fav_movies <- get_fav_movies_by_genre(testUsers)
+topnmonitor_fav_movies
+```
+
+```{r}
+# iterate throguh both test_users_i
+topnmonitor_fav_movies_1 <- get_fav_movies_by_genre(testUsers_1)
+topnmonitor_fav_movies_1
+
+topnmonitor_fav_movies_2 <- get_fav_movies_by_genre(testUsers_2)
+topnmonitor_fav_movies_2
+
+topnmonitor_fav_movies_list <- list(topnmonitor_fav_movies_1, topnmonitor_fav_movies_2)
+```
+
  
 ## 10.4 Vergleiche pro Kunde Top-Empfehlungen vs Top-Filme nach Genres,
 ```{r}
@@ -1210,16 +1377,72 @@ ggplot(binded_complete_pivot, aes(y = genre, x = value)) +
   theme_minimal() +
   labs(title = "Top-N Empfehlungen vs Top-Filme nach Genres", x = "Value", y = "Genre") +
   theme(plot.title = element_text(hjust = 0.5))
-  
-
 
 ```
 
-## 10.5 Definiere eine Qualitätsmetrik für Top-N Listen und teste sie.
+```{r}
+create_cleveland_plot <- function(a, b, datatext, modeltext){
+  binded <- rbind(a, b)
+  binded_complete <- binded %>% add_column(Type = c("topnmonitor_recom", "topnmonitor_fav_movies"))
+  binded_complete_pivot <- pivot_longer(binded_complete, cols = 1:19, names_to = "genre", values_to = "value")
+  ggplot(binded_complete_pivot, aes(y = genre, x = value)) +
+    geom_point(aes(color = Type)) + 
+    geom_line(aes(group=genre)) + 
+    theme_minimal() +
+    labs(title = paste("Top-N Empfehlungen vs Top-Filme nach Genres mit Modell", modeltext, "für", datatext) , x = "Value", y = "Genre") +
+    theme(plot.title = element_text(hjust = 0.5))
+}
+```
+
 
 ```{r}
+#models und datensatz finden und zum titel hinzfuegen.
+n_models <- list("IBCF", "UBCF", "SVD_3", "SVD_5")
+n_dataset <- list("Datensatz 1", "Datensatz 2")
+
+cnt <- 1
+for (b_i in 1:length(n_dataset)) {
+  datatext_i <- n_dataset[b_i]
+  for (a_i in 1:length(n_models)) {
+    modeltext_i <- n_models[a_i]
+    b_df <- topnmonitor_fav_movies_list[[b_i]][1,2:20]
+    a_df <- top_n_list[[cnt]][1,2:20]
+    cnt <- cnt + 1
+    print(create_cleveland_plot(a_df, b_df, datatext_i, modeltext_i))
+  }
+}
+```
+
+
+## 10.5 Definiere eine Qualitätsmetrik für Top-N Listen und teste sie.
+
+
+```{r}
+# testing
 rowSums(topnmonitor_recom[2:20] * topnmonitor_fav_movies[2:20]) /
 (sqrt(rowSums(topnmonitor_recom[2:20]^2))*sqrt(rowSums(topnmonitor_fav_movies[2:20]^2)))
+```
+
+
+```{r}
+cosine_10_2df <- function(df1, df2) {
+  cosine <- rowSums(df1[2:20] * df2[2:20]) /
+  (sqrt(rowSums(df1[2:20]^2))*sqrt(rowSums(df2[2:20]^2)))
+  return(cosine)
+} 
+
+cnt <- 1
+for (b_i in 1:length(n_dataset)) {
+  datatext_i <- n_dataset[b_i]
+  for (a_i in 1:length(n_models)) {
+    modeltext_i <- n_models[a_i]
+    b_df <- topnmonitor_fav_movies_list[[b_i]]
+    a_df <- top_n_list[[cnt]]
+    cnt <- cnt + 1
+    print(paste("Model:", modeltext_i, "fuer:", datatext_i))
+    print(cosine_10_2df(a_df, b_df))
+  }
+}
 
 ```
 
