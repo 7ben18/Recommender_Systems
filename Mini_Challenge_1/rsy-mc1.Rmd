@@ -551,6 +551,7 @@ result_cossim_4_scaled <- 1 / 2 * (result_cossim_4 + 1)
 
 result_cossim_4_scaled[1:5,1:5]
 ```
+Für den Vergleich unserer Implementation mit der von Recommenderlab haben wir festgestellt, dass Recommenderlab die Resultate auf Werte zwischen 0 und 1 normiert. Wir haben diese Normierung auch auf unser Resultat durchgeführt. Oben ist das Resultat von Recommenderlab für die ersten fünf Filme ersichtlich, darunter unsere, normierte Implementation. Es lässt sich feststellen, dass die Werte von Recommenderlab sehr hoch, in der Nähe von 1 liegen. Unsere hingegen reichen etwa von 0.5 bis 1. Wir konnten die Ursache der Differenz nicht feststellen, es wäre aber ein Zufall, wenn die Ähnlichkeiten wirklich so hoch wären. Unsere Bandbreite, von 0.5 (resp. unnormiert 0) bis 1 ist deshalb realistischer.
 
 ### 4.2.2 Vergleich Cosine Similiarity mit anderem R-Paket
 ```{r}
@@ -559,8 +560,10 @@ library(lsa)
 rec_simMat <- similarity(MovieLenseCompact_1[,1:5], which = "items")
 rec_simMat
 
-# simMat_lsa <- cosine(DfforSimMatrix, y = NULL)
+result_cossim_4_scaled[1:5,1:5]
 ```
+
+Wir konnten keinen direkten Vergleich mit der Implementation von LSA machen, weil sie die Items anders sortieren und wir deshalb keine Übereinstimmende Items erhalten haben. Auch wenn wir die ersten 10 Items angezeigt haben, konnten wir keine Übereinstimmung von Items finden. Was aber auffällt ist, dass LSA auch sehr hohe Similarities, im Bereich von 1, berechnet hat.
 
 ## 4.3 Vergleiche deine mittels Cosine Similarity erzeugten Ähnlichkeitsmatrix für ordinale Ratings mit der Jaccard-basierten Ähnlichkeitsmatrix für binäre Ratings.
 ```{r}
@@ -571,6 +574,7 @@ print("jaccard-basiert")
 jaccardsim_4[1:5, 1:5]
 ```
 
+Zwischen Similarity basierend auf Cosine und Jaccard sind deutliche Unterschiede ersichtlich. Bei Cosine betragen die meisten Werte zwischen 0.15 und 0.40. Im Gegensatz betrage die meisten Werte bei Jaccard um oder den Wert Null. Das dürfte daran liegen, dass aufgrund der binären Codierung der Ratings, weniger Übereinstimmungen bestehen.
 
 # 5 Analyse Top-N Listen - IBCF vs UBCF
 Aufgabe 5: Vergleiche und diskutiere Top-N Empfehlungen von IBCF
@@ -1146,6 +1150,7 @@ MovieLenseTest <- MovieLense[testUsers,]
 MovieLenseTest
 ```
 
+In dieser Zelle haben wir die Auswahl der zufälligen Kunden getestet, bevor wir eine Funktion erstellen.
 
 ```{r}
 # create function for select random users
@@ -1165,6 +1170,8 @@ testUsers
 MovieLenseTest
 ```
 
+Nun haben wir die Funktion erstellt und sie auf dem gleichen Datensatz getestet. Das Resultat ist wieder das gleiche.
+
 ```{r}
 # Make for both datasets
 # dataset 1
@@ -1176,7 +1183,7 @@ testUsers_1
 MovieLenseTest_1
 
 # dataset 2
-select_random_user_2 <- select_random_users(MovieLenseCompact_2, 20, 1234)
+select_random_user_2 <- select_random_users(MovieLenseCompact_2, 20, 123)
 
 testUsers_2 <- select_random_user_2[[1]]
 MovieLenseTest_2 <- select_random_user_2[[2]]
@@ -1185,6 +1192,7 @@ MovieLenseTest_2
 
 ```
 
+Wir haben nun die Funtkion auf beide reduzierten Datensätze angewendet. Da der selbe Seed trotzdem die gleichen User ausgewählt hat, mussten wir ihn unterschiedlich definieren. 
 
 ## 10.2 Bestimme den Anteil der Top-N Empfehlung nach Genres pro Kunde,
 ```{r}
@@ -1198,6 +1206,7 @@ rsvd_3 <- Recommender(MovieLenseTest, "SVD", param = list(k = 3))
 rsvd_5 <- Recommender(MovieLenseTest, "SVD", param = list(k = 5))
 ```
 
+Hier haben wir die vier Modelle trainiert.
 
 ```{r}
 #ribcf_10
@@ -1237,12 +1246,13 @@ ribcftopNList_10_df_transposed_tibble_pivot_genre <- select(ribcftopNList_10_df_
 ribcftopNList_10_df_transposed_tibble_pivot_genre
 ```
 
+Diese und die nächste Zelle stellt unser Testing der Auswertung dar.
+
 ```{r}
 # pivot longer dataframe
 topnmonitor_recom <- ribcftopNList_10_df_transposed_tibble_pivot_genre %>% group_by(testUsers) %>%
   summarise(across(everything(), ~ sum(., is.na(.), 0)))
 topnmonitor_recom
-
 ```
 
 ```{r}
@@ -1287,7 +1297,7 @@ get_top_n_items <- function(model, dataset, userlist) {
 ribcftopNList_10_df_transposed_tibble_pivot_genre <- get_top_n_items(ribcf_10, MovieLenseTest, testUsers)
 ribcftopNList_10_df_transposed_tibble_pivot_genre
 ```
-
+ Diese Zelle war ein Testing der neu geschriebenen Funktion.
 
 ```{r}
 # both datasets
@@ -1325,6 +1335,7 @@ for (i in 1:length(n_dataset)) {
 
 top_n_list
 ```
+Diese Auswertung stellt nun die Verteilung der top empfohlenen Genre fürs die einzelnen Kunden dar. Im ersten Dataframe wird ersichtlich, dass für User 4 viermal Action Filme empfohlen wurden. Drama Filme befanden sich gar 10 mal unter den Filmen.
 
 ## 10.3 Bestimme pro Kunde den Anteil nach Genres seiner Top-Filme
 (=Filme mit besten Bewertungen),
@@ -1333,9 +1344,9 @@ top_n_list
 topnmonitor_fav_movies <- MovieLenseEDA_Joined %>% filter(user %in% testUsers, rating == 5) %>% group_by(user) %>% summarise(across(c(unknown, Action, Adventure, Animation, `Children's`, Comedy, Crime, Documentary, Drama, Fantasy, `Film-Noir`, Horror, Musical, Mystery, Romance, `Sci-Fi`, Thriller, War, Western),sum)) %>% mutate(user = as.numeric(user)) %>%  arrange(user)
 topnmonitor_fav_movies
 ```
+Hierbei handelt es sich wieder um ein Resultat eines Tests.
 
 ```{r}
-# create function
 get_fav_movies_by_genre <- function(users) {
   fav_movies_by_genre <- MovieLenseEDA_Joined %>% filter(user %in% users, rating == 5) %>% group_by(user) %>% summarise(across(c(unknown, Action, Adventure, Animation, `Children's`, Comedy, Crime, Documentary, Drama, Fantasy, `Film-Noir`, Horror, Musical, Mystery, Romance, `Sci-Fi`, Thriller, War, Western),sum)) %>% mutate(user = as.numeric(user)) %>%  arrange(user)
   return(fav_movies_by_genre)
@@ -1344,6 +1355,7 @@ get_fav_movies_by_genre <- function(users) {
 topnmonitor_fav_movies <- get_fav_movies_by_genre(testUsers)
 topnmonitor_fav_movies
 ```
+Bei diesem Test der Funktion wurde wieder dasselbe Resultat generiert.
 
 ```{r}
 # iterate throguh both test_users_i
@@ -1355,6 +1367,7 @@ topnmonitor_fav_movies_2
 
 topnmonitor_fav_movies_list <- list(topnmonitor_fav_movies_1, topnmonitor_fav_movies_2)
 ```
+Diese Funktion hat nun die Top Genres der von den Usern bewerteten Filmen generiert. Im zweiten Dataframe ist ersichtlich, dass sieben von User 4 "gelikte" Filme vom Genre Action kommen.
 
  
 ## 10.4 Vergleiche pro Kunde Top-Empfehlungen vs Top-Filme nach Genres,
@@ -1379,6 +1392,8 @@ ggplot(binded_complete_pivot, aes(y = genre, x = value)) +
   theme(plot.title = element_text(hjust = 0.5))
 
 ```
+Hierbei handelt es sich wieder um einen Test für den Cleveland Plot.
+
 
 ```{r}
 create_cleveland_plot <- function(a, b, datatext, modeltext){
@@ -1394,6 +1409,7 @@ create_cleveland_plot <- function(a, b, datatext, modeltext){
 }
 ```
 
+Diese Funktion generiert die Cleveland Plots.
 
 ```{r}
 #models und datensatz finden und zum titel hinzfuegen.
@@ -1412,10 +1428,11 @@ for (b_i in 1:length(n_dataset)) {
   }
 }
 ```
+Es wurden nun 8 Cleveland Plots generiert. Vier für den ersten reduzierten Datensatz und vier für den zweiten reduzierten Datensatz. Die vier Plots pro Datensatz stehen für je eines der unterschiedlichen Modelle. Dargestellt wird jeweils das Resultat des ersten Users pro Datensatz. Im ersten Plot (IBCF für Datensatz 1) ist ersichtlich, dass dem User 10mal Drama Filme empfohlen hat, während er selber sie nur 3mal gelikt hat. Der schwarze Balken entspricht der Differenz.
 
+Der visuelle Vergleich zwischen den beiden Datensätzen lässt den Schluss zu, dass bei beiden grosse Diskrepanzen zwischen den Empfehlungen und den tatsächlichen Likes bestehen.
 
 ## 10.5 Definiere eine Qualitätsmetrik für Top-N Listen und teste sie.
-
 
 ```{r}
 # testing
@@ -1423,6 +1440,7 @@ rowSums(topnmonitor_recom[2:20] * topnmonitor_fav_movies[2:20]) /
 (sqrt(rowSums(topnmonitor_recom[2:20]^2))*sqrt(rowSums(topnmonitor_fav_movies[2:20]^2)))
 ```
 
+Hier handelt es sich um wiederum um einen Test.
 
 ```{r}
 cosine_10_2df <- function(df1, df2) {
@@ -1446,5 +1464,7 @@ for (b_i in 1:length(n_dataset)) {
 
 ```
 
-Wir haben uns für die Qualitätsmetrik Cosine Similarity entschieden. Da wir pro User zwei Vektoren haben, ist dies eine gute Metrik, um die Top-N Liste und die Top-Filme des Kunden zu vergleichen. Für den obersten User der Matrix wird ersichtlich, dass die Cosine Similarity 0.76 beträgt, die Ähnlichkeit zwischen den beiden Liste ist bei diesem User also ziemlich hoch. Dies sagt aus, dass User in etwa der gleiche Anteil pro Genre empfohlen wurde, wie er selber Top-Filme definiert hat.
-
+Wir haben uns für die Qualitätsmetrik Cosine Similarity entschieden. Da wir pro User zwei Vektoren haben, ist dies eine geeignete Metrik, um die Top-N Liste und die Top-Filme des Kunden zu vergleichen.
+Für das Model IBCF und den Datensatz 1 wurde für den zweiten User eine Cosine Similarity von 0.85 berechnet. Die Übereinstimmung zwischen den Top-N empfohlenen Genres und den Top-Film-Genres des Kunden ist also relativ hoch. Im Gegensatz dazu ist beim sechsten User die Similarity lediglich 0.47 und die Übereinstimmung damit merkbar tiefer. 
+Innerhalb des ersten Datensatzes sind die Similarities relativ hoch. Bei allen Modellen liegen die Werte grösstenteils über 0.7. Dies gilt auch für den zweiten Datensatz. Nach oben gehen die Werte bis fast 1 nach unten bis 0.4.
+Verglichen zwischen dem ersten und zweiten Datensatz, sind die Werte ebenfalls ähnlich. Wir haben zwar keine Auswertung berechnet, doch sind die Zahlen im gleichen, eher hohen, Bereich.
